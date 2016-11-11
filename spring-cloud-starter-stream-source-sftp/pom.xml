@@ -64,7 +64,7 @@
 					<bom>
 						<name>scs-bom</name>
 						<groupId>org.springframework.cloud.stream.app</groupId>
-						<artifactId>ftp-app-dependencies</artifactId>
+						<artifactId>sftp-app-dependencies</artifactId>
 						<version>${project.version}</version>
 					</bom>
 					<generatedApps>
