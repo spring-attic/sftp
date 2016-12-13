@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>sftp-app-dependencies</artifactId>
-    <version>1.1.1.BUILD-SNAPSHOT</version>
+    <version>1.1.1.RELEASE</version>
     <packaging>pom</packaging>
     <name>sftp-app-dependencies</name>
     <description>Spring Cloud Stream FTP App Dependencies</description>
@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.cloud.stream.app</groupId>
         <artifactId>app-starters-core-dependencies</artifactId>
-        <version>1.1.1.BUILD-SNAPSHOT</version>
+        <version>1.1.1.RELEASE</version>
     </parent>
     <properties>
         <sshd-core.version>0.10.1</sshd-core.version>
@@ -22,12 +22,12 @@
             <dependency>
                 <groupId>org.springframework.cloud.stream.app</groupId>
                 <artifactId>spring-cloud-starter-stream-source-sftp</artifactId>
-                <version>1.1.1.BUILD-SNAPSHOT</version>
+                <version>1.1.1.RELEASE</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.cloud.stream.app</groupId>
                 <artifactId>spring-cloud-starter-stream-sink-sftp</artifactId>
-                <version>1.1.1.BUILD-SNAPSHOT</version>
+                <version>1.1.1.RELEASE</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.integration</groupId>
@@ -43,7 +43,7 @@
             <dependency>
                 <groupId>org.springframework.cloud.stream.app</groupId>
                 <artifactId>sftp-app-starters-common</artifactId>
-                <version>1.1.1.BUILD-SNAPSHOT</version>
+                <version>1.1.1.RELEASE</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.integration</groupId>
@@ -53,7 +53,7 @@
             <dependency>
                 <groupId>org.springframework.cloud.stream.app</groupId>
                 <artifactId>sftp-app-starters-test-support</artifactId>
-                <version>1.1.1.BUILD-SNAPSHOT</version>
+                <version>1.1.1.RELEASE</version>
                 <scope>test</scope>
             </dependency>
 
