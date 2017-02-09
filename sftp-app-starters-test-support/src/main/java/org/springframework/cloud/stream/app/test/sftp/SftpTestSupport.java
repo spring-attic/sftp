@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,7 +59,7 @@ public class SftpTestSupport extends RemoteFileTestSupport {
 				return true;
 			}
 		});
-		server.setPort(port);
+		server.setPort(0);
 		server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("hostkey.ser"));
 		SftpSubsystem.Factory sftp = new SftpSubsystem.Factory();
 		server.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(sftp));
@@ -78,6 +78,9 @@ public class SftpTestSupport extends RemoteFileTestSupport {
 		});
 
 		server.start();
+		System.setProperty("sftp.factory.port", String.valueOf(server.getPort()));
+		System.setProperty("sftp.localDir",
+				localTemporaryFolder.getRoot().getAbsolutePath() + File.separator + "localTarget");
 	}
 
 	@AfterClass
@@ -87,6 +90,8 @@ public class SftpTestSupport extends RemoteFileTestSupport {
 		if (hostkey.exists()) {
 			hostkey.delete();
 		}
+		System.clearProperty("sftp.factory.port");
+		System.clearProperty("sftp.localDir");
 	}
 
 }

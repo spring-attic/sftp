@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,16 +21,13 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.Properties;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.app.test.PropertiesInitializer;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.messaging.support.GenericMessage;
@@ -44,25 +41,17 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Gary Russell
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = SftpSinkIntegrationTests.SftpSinkApplication.class,
-								initializers = PropertiesInitializer.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
+	properties = {
+		"sftp.remoteDir = sftpTarget",
+		"sftp.factory.username = foo",
+		"sftp.factory.password = foo",
+		"sftp.mode = FAIL",
+		"sftp.filenameExpression = payload.name.toUpperCase()",
+		"sftp.factory.allowUnknownKeys = true"
+	})
 @DirtiesContext
 public class SftpSinkIntegrationTests extends SftpTestSupport {
-
-	@BeforeClass
-	public static void configureSink() throws Throwable {
-
-		Properties properties = new Properties();
-		properties.put("sftp.remoteDir", "sftpTarget");
-		properties.put("sftp.factory.username", "foo");
-		properties.put("sftp.factory.password", "foo");
-
-		properties.put("sftp.factory.port", port);
-		properties.put("sftp.mode", "FAIL");
-		properties.put("sftp.filenameExpression", "payload.name.toUpperCase()");
-		properties.put("sftp.factory.allowUnknownKeys", "true");
-		PropertiesInitializer.PROPERTIES = properties;
-	}
 
 	@Autowired
 	Sink sftpSink;

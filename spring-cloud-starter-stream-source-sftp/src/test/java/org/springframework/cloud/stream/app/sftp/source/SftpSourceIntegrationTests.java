@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,18 +21,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.cloud.stream.app.test.PropertiesInitializer;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
@@ -41,7 +38,7 @@ import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 
 /**
@@ -49,9 +46,16 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Marius Bogoevici
  * @author Gary Russell
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = SftpSourceIntegrationTests.SftpSourceApplication.class,
-								initializers = PropertiesInitializer.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
+	properties = {
+			"sftp.remoteDir = sftpSource",
+			"sftp.factory.username = foo",
+			"sftp.factory.password = foo",
+			"file.consumer.mode = ref",
+			"sftp.factory.allowUnknownKeys = true",
+			"sftp.filenameRegex = .*"
+	})
 @DirtiesContext
 public class SftpSourceIntegrationTests extends SftpTestSupport {
 
@@ -64,21 +68,6 @@ public class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	@Autowired
 	private SftpSourceProperties config;
-
-	@BeforeClass
-	public static void configureSource() throws Throwable {
-
-		Properties properties = new Properties();
-		properties.put("sftp.remoteDir", "sftpSource");
-		properties.put("sftp.localDir", localTemporaryFolder.getRoot().getAbsolutePath() + File.separator + "localTarget");
-		properties.put("sftp.factory.username", "foo");
-		properties.put("sftp.factory.password", "foo");
-		properties.put("sftp.factory.port", port);
-		properties.put("file.consumer.mode", "ref");
-		properties.put("sftp.factory.allowUnknownKeys", "true");
-		properties.put("sftp.filenameRegex", ".*");
-		PropertiesInitializer.PROPERTIES = properties;
-	}
 
 	@Autowired
 	Source sftpSource;
