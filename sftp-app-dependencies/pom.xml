@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.springframework.cloud.stream.app</groupId>
 	<artifactId>sftp-app-dependencies</artifactId>
@@ -13,14 +13,23 @@
 		<artifactId>spring-cloud-dependencies-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
 		<version>1.2.1.RELEASE</version>
-		<relativePath />
+		<relativePath/>
 	</parent>
 
 	<properties>
-		<sshd-core.version>0.10.1</sshd-core.version>
+		<sshd-core.version>0.14.0</sshd-core.version>
+		<spring-integration.version>4.3.8.RELEASE</spring-integration.version>
 	</properties>
+
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework.integration</groupId>
+				<artifactId>spring-integration-bom</artifactId>
+				<version>${spring-integration.version}</version>
+				<scope>import</scope>
+				<type>pom</type>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud.stream.app</groupId>
 				<artifactId>spring-cloud-starter-stream-source-sftp</artifactId>
