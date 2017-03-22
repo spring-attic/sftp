@@ -16,6 +16,8 @@
 package org.springframework.cloud.stream.app.sftp.source;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -37,9 +39,12 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ApplicationContext;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
+import org.springframework.integration.file.splitter.FileSplitter;
+import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 
@@ -51,16 +56,15 @@ import org.springframework.test.context.junit4.SpringRunner;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
-		properties = {
-				"sftp.remoteDir = sftpSource",
-				"sftp.factory.username = foo",
-				"sftp.factory.password = foo",
-				"file.consumer.mode = ref",
-				"sftp.factory.allowUnknownKeys = true",
-				"sftp.filenameRegex = .*"
-		})
+	properties = {
+			"sftp.remoteDir = sftpSource",
+			"sftp.factory.username = foo",
+			"sftp.factory.password = foo",
+			"sftp.factory.allowUnknownKeys = true",
+			"sftp.filenameRegex = .*"
+	})
 @DirtiesContext
-public class SftpSourceIntegrationTests extends SftpTestSupport {
+public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	@Autowired
 	ApplicationContext applicationContext;
@@ -68,36 +72,97 @@ public class SftpSourceIntegrationTests extends SftpTestSupport {
 	@Autowired
 	SourcePollingChannelAdapter sourcePollingChannelAdapter;
 
-	@Autowired
-	private MessageCollector messageCollector;
+	@Autowired(required = false)
+	SftpStreamingMessageSource streamingSource;
 
 	@Autowired
-	private SftpSourceProperties config;
+	MessageCollector messageCollector;
 
 	@Autowired
-	private Source sftpSource;
+	SftpSourceProperties config;
 
-	@Test
-	public void sourceFilesAsRef() throws Exception {
-		assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
-				"source.synchronizer.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
-		BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(sftpSource.output());
-		for (int i = 1; i <= 2; i++) {
+	@Autowired
+	Source sftpSource;
+
+	@TestPropertySource(properties = "file.consumer.mode = ref")
+	public static class RefTests extends SftpSourceIntegrationTests {
+
+		@Test
+		public void sourceFilesAsRef() throws InterruptedException {
+			assertNull(this.streamingSource);
+			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
+					"source.synchronizer.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
+			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
+			for (int i = 1; i <= 2; i++) {
+				@SuppressWarnings("unchecked")
+				Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), equalTo(new File(config.getLocalDir() + "/sftpSource" + i + ".txt")));
+			}
+			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
+
+			File file = new File(getSourceRemoteDirectory(), prefix() + "Source1.txt");
+			file.setLastModified(System.currentTimeMillis() - 1_000_000);
+
 			@SuppressWarnings("unchecked")
 			Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
 			assertNotNull(received);
-			assertThat(received.getPayload(), equalTo(new File(config.getLocalDir() + "/sftpSource" + i + ".txt")));
+			assertThat(received.getPayload(), equalTo(new File(config.getLocalDir() + "/sftpSource1.txt")));
 		}
 
-		assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
+	}
 
-		File file = new File(getSourceRemoteDirectory(), prefix() + "Source1.txt");
-		file.setLastModified(System.currentTimeMillis() - 1_000_000);
+	@TestPropertySource(properties = { "sftp.stream = true",
+			"file.consumer.mode = contents",
+			"sftp.delete-remote-files = true" })
+	public static class ContentsTests extends SftpSourceIntegrationTests {
 
-		@SuppressWarnings("unchecked")
-		Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
-		assertNotNull(received);
-		assertThat(received.getPayload(), equalTo(new File(config.getLocalDir() + "/sftpSource1.txt")));
+		@Test
+		public void streamSourceFilesAsContents() throws InterruptedException {
+			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
+					"source.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
+			for (int i = 1; i <= 2; i++) {
+				@SuppressWarnings("unchecked")
+				Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(new String(received.getPayload()), startsWith("source"));
+			}
+			int n = 0;
+			while(n++ < 100 && getSourceRemoteDirectory().list().length > 0) {
+				Thread.sleep(100);
+			}
+			assertThat(getSourceRemoteDirectory().list().length, equalTo(0)); // deleted
+		}
+
+	}
+
+	@TestPropertySource(properties = { "sftp.stream = true",
+			"file.consumer.mode = lines",
+			"file.consumer.with-markers = true",
+			"file.consumer.markers-json = false" })
+	public static class LinesTests extends SftpSourceIntegrationTests {
+
+		@Test
+		public void streamSourceFilesAsContents() throws InterruptedException {
+			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
+					"source.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
+			for (int i = 1; i <= 2; i++) {
+				Message<?> received = this.messageCollector.forChannel(sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), instanceOf(FileSplitter.FileMarker.class));
+				received = this.messageCollector.forChannel(sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(((String) received.getPayload()), startsWith("source"));
+				received = this.messageCollector.forChannel(sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), instanceOf(FileSplitter.FileMarker.class));
+			}
+		}
+
 	}
 
 	@SpringBootApplication
