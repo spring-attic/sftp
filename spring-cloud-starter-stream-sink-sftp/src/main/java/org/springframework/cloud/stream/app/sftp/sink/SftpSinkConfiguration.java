@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 the original author or authors.
+ * Copyright 2015-2017 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,12 +15,9 @@
 
 package org.springframework.cloud.stream.app.sftp.sink;
 
-import com.jcraft.jsch.ChannelSftp.LsEntry;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.app.sftp.SftpSessionFactoryConfiguration;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -31,12 +28,14 @@ import org.springframework.integration.dsl.sftp.SftpMessageHandlerSpec;
 import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
 
+import com.jcraft.jsch.ChannelSftp.LsEntry;
+
 /**
  * @author Gary Russell
  */
 @EnableBinding(Sink.class)
 @EnableConfigurationProperties(SftpSinkProperties.class)
-@Import(SftpSessionFactoryConfiguration.class)
+@Import(SftpSinkSessionFactoryConfiguration.class)
 public class SftpSinkConfiguration {
 
 	@Autowired
