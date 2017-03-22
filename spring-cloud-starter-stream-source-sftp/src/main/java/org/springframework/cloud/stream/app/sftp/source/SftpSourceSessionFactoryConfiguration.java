@@ -1,5 +1,6 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2017 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp;
+package org.springframework.cloud.stream.app.sftp.source;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.file.remote.session.CachingSessionFactory;
 import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.sftp.session.DefaultSftpSessionFactory;
@@ -26,27 +27,29 @@ import org.springframework.integration.sftp.session.DefaultSftpSessionFactory;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 /**
- * SFTP Session factory configuration.
+ * Session factory configuration.
  *
  * @author Gary Russell
+ *
  */
-@Configuration
-@EnableConfigurationProperties(SftpSessionFactoryProperties.class)
-public class SftpSessionFactoryConfiguration {
+public class SftpSourceSessionFactoryConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public SessionFactory<LsEntry> sftpSessionFactory(SftpSessionFactoryProperties properties) {
+	public SessionFactory<LsEntry> sftpSessionFactory(SftpSourceProperties properties,
+			ConfigurableApplicationContext applicationContext) {
 		DefaultSftpSessionFactory sftpSessionFactory = new DefaultSftpSessionFactory();
-		sftpSessionFactory.setHost(properties.getHost());
-		sftpSessionFactory.setPort(properties.getPort());
-		sftpSessionFactory.setUser(properties.getUsername());
-		sftpSessionFactory.setPassword(properties.getPassword());
-		sftpSessionFactory.setAllowUnknownKeys(properties.isAllowUnknownKeys());
-		if (properties.getKnownHostsExpression() != null) {
-			sftpSessionFactory.setKnownHosts("#{" + properties.getKnownHostsExpression() + "}");
+		sftpSessionFactory.setHost(properties.getFactory().getHost());
+		sftpSessionFactory.setPort(properties.getFactory().getPort());
+		sftpSessionFactory.setUser(properties.getFactory().getUsername());
+		sftpSessionFactory.setPassword(properties.getFactory().getPassword());
+		sftpSessionFactory.setAllowUnknownKeys(properties.getFactory().isAllowUnknownKeys());
+		if (properties.getFactory().getKnownHostsExpression() != null) {
+			sftpSessionFactory.setKnownHosts(properties.getFactory().getKnownHostsExpression()
+					.getValue(IntegrationContextUtils.getEvaluationContext(applicationContext.getBeanFactory()),
+							applicationContext, String.class));
 		}
-		if (properties.getCacheSessions() != null) {
+		if (properties.getFactory().getCacheSessions() != null) {
 			CachingSessionFactory<LsEntry> csf = new CachingSessionFactory<>(sftpSessionFactory);
 			return csf;
 		}

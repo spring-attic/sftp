@@ -15,6 +15,7 @@
 
 package org.springframework.cloud.stream.app.sftp.sink;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -24,9 +25,14 @@ import org.junit.Test;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.util.EnvironmentTestUtils;
+import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.integration.config.EnableIntegration;
+import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.file.support.FileExistsMode;
+import org.springframework.integration.test.util.TestUtils;
 
 /**
  * @author David Turanski
@@ -104,9 +110,31 @@ public class SftpSinkPropertiesTests {
 		assertThat(properties.getMode(), equalTo(FileExistsMode.FAIL));
 	}
 
+	@Test
+	public void knownHostsExpression() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		EnvironmentTestUtils.addEnvironment(context,
+				"sftp.factory.known-hosts-expression = @systemProperties[\"user.home\"] + \"/.ssh/known_hosts\"",
+				"sftp.factory.cache-sessions = true");
+		context.register(Factory.class);
+		context.refresh();
+		SessionFactory<?> sessionFactory = context.getBean(SessionFactory.class);
+		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "sessionFactory.knownHosts"), endsWith(
+				"/.ssh/known_hosts"));
+	}
+
 	@Configuration
 	@EnableConfigurationProperties(SftpSinkProperties.class)
 	static class Conf {
 
 	}
+
+	@Configuration
+	@EnableConfigurationProperties(SftpSinkProperties.class)
+	@EnableIntegration
+	@Import({ SftpSinkSessionFactoryConfiguration.class, SpelExpressionConverterConfiguration.class })
+	static class Factory {
+
+	}
+
 }
