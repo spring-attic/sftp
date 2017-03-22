@@ -12,6 +12,8 @@ NOTE: By default Spring Integration will use `o.s.i.file.DefaultFileNameGenerato
 based on the value of the `file_name` header (if it exists) in the `MessageHeaders`, or if the payload of the `Message` is already a `java.io.File`, then it will
 use the original name of that file.
 
+When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
+
 == Options
 
 The **$$sftp$$** $$sink$$ has the following options:
