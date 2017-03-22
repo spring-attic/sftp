@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.file.remote.session.CachingSessionFactory;
@@ -36,8 +36,7 @@ public class SftpSourceSessionFactoryConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public SessionFactory<LsEntry> sftpSessionFactory(SftpSourceProperties properties,
-			ConfigurableApplicationContext applicationContext) {
+	public SessionFactory<LsEntry> sftpSessionFactory(SftpSourceProperties properties, BeanFactory beanFactory) {
 		DefaultSftpSessionFactory sftpSessionFactory = new DefaultSftpSessionFactory();
 		sftpSessionFactory.setHost(properties.getFactory().getHost());
 		sftpSessionFactory.setPort(properties.getFactory().getPort());
@@ -46,8 +45,7 @@ public class SftpSourceSessionFactoryConfiguration {
 		sftpSessionFactory.setAllowUnknownKeys(properties.getFactory().isAllowUnknownKeys());
 		if (properties.getFactory().getKnownHostsExpression() != null) {
 			sftpSessionFactory.setKnownHosts(properties.getFactory().getKnownHostsExpression()
-					.getValue(IntegrationContextUtils.getEvaluationContext(applicationContext.getBeanFactory()),
-							applicationContext, String.class));
+					.getValue(IntegrationContextUtils.getEvaluationContext(beanFactory) ,String.class));
 		}
 		if (properties.getFactory().getCacheSessions() != null) {
 			CachingSessionFactory<LsEntry> csf = new CachingSessionFactory<>(sftpSessionFactory);
