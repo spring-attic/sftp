@@ -23,11 +23,13 @@ import org.hibernate.validator.constraints.Range;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.expression.Expression;
 import org.springframework.integration.file.support.FileExistsMode;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * @author Gary Russell
  */
 @ConfigurationProperties("sftp")
+@Validated
 public class SftpSinkProperties {
 
 	private final Factory factory = new Factory();
