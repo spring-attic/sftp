@@ -17,6 +17,54 @@ The payload of these 2 additional marker messages is of type `FileSplitter.FileM
 
 When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
 
+== Input
+
+N/A (Fetches files from an SFTP server).
+
+== Output
+
+=== mode = contents
+
+==== Headers:
+
+* `Content-Type: application/octet-stream`
+* `file_orginalFile: <java.io.File>`
+* `file_name: <file name>`
+
+==== Payload:
+
+A `byte[]` filled with the file contents.
+
+=== mode = lines
+
+==== Headers:
+
+* `Content-Type: text/plain`
+* `file_orginalFile: <java.io.File>`
+* `file_name: <file name>`
+* `correlationId: <UUID>` (same for each line)
+* `sequenceNumber: <n>`
+* `sequenceSize: 0` (number of lines is not know until the file is read)
+
+==== Payload:
+
+A `String` for each line.
+
+The first line is optionally preceded by a message with a `START` marker payload.
+The last line is optionally followed by a message with an `END` marker payload.
+
+Marker presence and format are determined by the `with-markers` and `markers-json` properties.
+
+=== mode = ref
+
+==== Headers:
+
+None.
+
+==== Payload:
+
+A `java.io.File` object.
+
 == Options
 
 The **$$sftp$$** $$source$$ has the following options:
@@ -62,4 +110,11 @@ $$trigger.time-unit$$:: $$The TimeUnit to apply to delay values.$$ *($$TimeUnit$
 
 ```
 $> mvn package
+```
+
+== Examples
+
+```
+java -jar sftp_source.jar --sftp.remote-dir=foo --file.consumer.mode=lines --trigger.fixed-delay=60 \
+         --sftp.factory.host=sftpserver --sftp.factory.username=user --sftp.factory.password=pw --sftp.local-dir=/foo
 ```
