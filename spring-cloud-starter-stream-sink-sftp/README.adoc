@@ -14,6 +14,23 @@ use the original name of that file.
 
 When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
 
+== Input
+
+=== Headers
+
+* `file_name` (See note above)
+
+=== Payload
+
+* `java.io.File`
+* `java.io.InputStream`
+* `byte[]`
+* `String`
+
+== Output
+
+N/A (writes to the SFTP server).
+
 == Options
 
 The **$$sftp$$** $$sink$$ has the following options:
@@ -44,5 +61,18 @@ $$sftp.use-temporary-filename$$:: $$Whether or not to write to a temporary file 
 == Build
 
 ```
-$ mvn clean package
+$ ./mvnw clean install -PgenerateApps
+$ cd apps
+```
+You can find the corresponding binder based projects here.
+You can then cd into one one of the folders and build it:
+```
+$ ./mvnw clean package
+```
+
+=== Examples
+
+```
+java -jar sftp_sink.jar --sftp.remote-dir=bar --sftp.factory.host=sftpserver \
+         --sftp.factory.username=user --sftp.factory.password=pw
 ```
