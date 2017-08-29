@@ -124,3 +124,10 @@ $ ./mvnw clean package
 java -jar sftp_source.jar --sftp.remote-dir=foo --file.consumer.mode=lines --trigger.fixed-delay=60 \
          --sftp.factory.host=sftpserver --sftp.factory.username=user --sftp.factory.password=pw --sftp.local-dir=/foo
 ```
+
+== Examples
+
+```
+java -jar sftp_source.jar --sftp.remote-dir=foo --file.consumer.mode=lines --trigger.fixed-delay=60 \
+         --sftp.factory.host=sftpserver --sftp.factory.username=user --sftp.factory.password=pw --sftp.local-dir=/foo
+```

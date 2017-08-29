@@ -76,3 +76,10 @@ $ ./mvnw clean package
 java -jar sftp_sink.jar --sftp.remote-dir=bar --sftp.factory.host=sftpserver \
          --sftp.factory.username=user --sftp.factory.password=pw
 ```
+
+=== Examples
+
+```
+java -jar sftp_sink.jar --sftp.remote-dir=bar --sftp.factory.host=sftpserver \
+         --sftp.factory.username=user --sftp.factory.password=pw
+```
