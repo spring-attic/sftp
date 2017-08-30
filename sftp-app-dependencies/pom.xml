@@ -18,18 +18,10 @@
 
 	<properties>
 		<sshd-core.version>0.14.0</sshd-core.version>
-		<spring-integration.version>4.3.8.RELEASE</spring-integration.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>org.springframework.integration</groupId>
-				<artifactId>spring-integration-bom</artifactId>
-				<version>${spring-integration.version}</version>
-				<scope>import</scope>
-				<type>pom</type>
-			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud.stream.app</groupId>
 				<artifactId>spring-cloud-starter-stream-source-sftp</artifactId>
