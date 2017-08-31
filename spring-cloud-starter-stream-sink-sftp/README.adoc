@@ -56,8 +56,6 @@ $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress
 $$sftp.use-temporary-filename$$:: $$Whether or not to write to a temporary file and rename.$$ *($$Boolean$$, default: `$$true$$`)*
 //end::configuration-properties[]
 
-//end::ref-doc[]
-
 == Build
 
 ```
@@ -76,3 +74,4 @@ $ ./mvnw clean package
 java -jar sftp_sink.jar --sftp.remote-dir=bar --sftp.factory.host=sftpserver \
          --sftp.factory.username=user --sftp.factory.password=pw
 ```
+//end::ref-doc[]
