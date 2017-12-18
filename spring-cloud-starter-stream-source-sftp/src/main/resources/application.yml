@@ -1,0 +1,6 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        output:
+          contentType: application/x-java-serialized-object
