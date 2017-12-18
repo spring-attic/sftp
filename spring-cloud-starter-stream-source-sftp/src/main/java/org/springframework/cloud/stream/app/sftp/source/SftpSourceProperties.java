@@ -18,6 +18,7 @@ package org.springframework.cloud.stream.app.sftp.source;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -31,6 +32,7 @@ import org.springframework.validation.annotation.Validated;
 /**
  * @author Gary Russell
  * @author Artem Bilan
+ * @author Chris Schaefer
  */
 @ConfigurationProperties("sftp")
 @Validated
@@ -90,6 +92,16 @@ public class SftpSourceProperties {
 	 * Set to true to stream the file rather than copy to a local directory.
 	 */
 	private boolean stream = false;
+
+	/**
+	 * Set to true to return file metadata without the entire payload.
+	 */
+	private boolean listOnly = false;
+
+	/**
+	 * Set to true to create output suitable for a task launch request.
+	 */
+	private boolean taskLauncherOutput = false;
 
 	@NotBlank
 	public String getRemoteDir() {
@@ -172,6 +184,11 @@ public class SftpSourceProperties {
 		return !(this.filenamePattern != null && this.filenameRegex != null);
 	}
 
+	@AssertFalse(message = "listOnly and taskLauncherOutput cannot be used at the same time")
+	public boolean isListOnlyOrTaskLauncher() {
+		return listOnly && taskLauncherOutput;
+	}
+
 	public boolean isStream() {
 		return this.stream;
 	}
@@ -182,6 +199,22 @@ public class SftpSourceProperties {
 
 	public Factory getFactory() {
 		return this.factory;
+	}
+
+	public boolean isTaskLauncherOutput() {
+		return taskLauncherOutput;
+	}
+
+	public void setTaskLauncherOutput(boolean taskLauncherOutput) {
+		this.taskLauncherOutput = taskLauncherOutput;
+	}
+
+	public boolean isListOnly() {
+		return listOnly;
+	}
+
+	public void setListOnly(boolean listOnly) {
+		this.listOnly = listOnly;
 	}
 
 	public static class Factory {

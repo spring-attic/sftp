@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 
@@ -27,6 +28,7 @@ import org.junit.Test;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -38,14 +40,14 @@ import org.springframework.integration.test.util.TestUtils;
  * @author David Turanski
  * @author Gary Russell
  * @author Artem Bilan
+ * @author Chris Schaefer
  */
 public class SftpSourcePropertiesTests {
 
 	@Test
 	public void localDirCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.localDir:local")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.localDir:local");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -56,8 +58,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void remoteDirCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.remoteDir:/remote")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.remoteDir:/remote");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -68,8 +69,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void deleteRemoteFilesCanBeEnabled() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.deleteRemoteFiles:true")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.deleteRemoteFiles:true");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -80,8 +80,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void autoCreateLocalDirCanBeDisabled() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.autoCreateLocalDir:false")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.autoCreateLocalDir:false");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -92,8 +91,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void tmpFileSuffixCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.tmpFileSuffix:.foo")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.tmpFileSuffix:.foo");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -104,8 +102,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void filenamePatternCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.filenamePattern:*.foo")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.filenamePattern:*.foo");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -116,8 +113,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void filenameRegexCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.filenameRegex:.*\\.foo")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.filenameRegex:.*\\.foo");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -128,8 +124,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void remoteFileSeparatorCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.remoteFileSeparator:\\")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.remoteFileSeparator:\\");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -137,12 +132,45 @@ public class SftpSourcePropertiesTests {
 		context.close();
 	}
 
+	@Test
+	public void listOnlyCanBeCustomized() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		testPropertyValues(context, "sftp.listOnly:true");
+		context.register(Conf.class);
+		context.refresh();
+		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
+		assertTrue(properties.isListOnly());
+	}
+
+	@Test
+	public void taskLauncherOutputCanBeCustomized() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		testPropertyValues(context, "sftp.taskLauncherOutput:true");
+		context.register(Conf.class);
+		context.refresh();
+		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
+		assertTrue(properties.isTaskLauncherOutput());
+	}
+
+	@Test(expected = AssertionError.class)
+	public void onlyAllowListOnlyOrTaskLauncherOutputEnabled() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		testPropertyValues(context, "sftp.listOnly:true", "sftp.taskLauncherOutput:true");
+		context.register(Conf.class);
+
+		try {
+			context.refresh();
+		}
+		catch (Exception e) {
+		}
+
+		fail("listOnly and taskLauncherOutput cannot be enabled at the same time.");
+	}
 
 	@Test
 	public void preserveTimestampDirCanBeDisabled() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.preserveTimestamp:false")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.preserveTimestamp:false");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -153,8 +181,7 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void knownHostsLocation() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of("sftp.factory.known-hosts-expression = '/foo'")
-				.applyTo(context);
+		testPropertyValues(context, "sftp.factory.known-hosts-expression = '/foo'");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
@@ -165,16 +192,19 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void knownHostsExpression() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		TestPropertyValues.of(
+		testPropertyValues(context,
 				"sftp.factory.known-hosts-expression = @systemProperties[\"user.home\"] + \"/.ssh/known_hosts\"",
-				"sftp.factory.cache-sessions = true")
-				.applyTo(context);
+				"sftp.factory.cache-sessions = true");
 		context.register(Factory.class);
 		context.refresh();
 		SessionFactory<?> sessionFactory = context.getBean(SessionFactory.class);
 		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "sessionFactory.knownHosts"), endsWith(
 				"/.ssh/known_hosts"));
 		context.close();
+	}
+
+	private void testPropertyValues(ConfigurableApplicationContext context, String... props) {
+		TestPropertyValues.of("sftp.factory.username=foo").and(props).applyTo(context);
 	}
 
 	@Configuration
