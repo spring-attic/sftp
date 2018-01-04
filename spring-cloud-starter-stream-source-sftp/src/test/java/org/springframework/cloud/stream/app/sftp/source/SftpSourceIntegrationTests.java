@@ -22,37 +22,44 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
+import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.file.splitter.FileSplitter;
 import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-
 
 /**
  * @author David Turanski
  * @author Marius Bogoevici
  * @author Gary Russell
  * @author Artem Bilan
+ * @author Chris Schaefer
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
@@ -83,6 +90,9 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	@Autowired
 	Source sftpSource;
+
+	@Autowired
+	RedisTemplate<String, String> redisTemplate;
 
 	@TestPropertySource(properties = "file.consumer.mode = ref")
 	public static class RefTests extends SftpSourceIntegrationTests {
@@ -165,10 +175,52 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	}
 
+	@TestPropertySource(properties = { "sftp.listOnly = true",
+			"sftp.factory.host = 127.0.0.1",
+			"sftp.factory.username = user",
+			"sftp.factory.password = pass",
+			"sftp.metadata.redis.keyName = sftpSourceTest" })
+	public static class SftpListOnlyGatewayTests extends SftpSourceIntegrationTests {
+		@Value("${sftp.metadata.redis.keyName}")
+		private String keyName;
+
+		@Before
+		public void before() {
+			redisTemplate.delete(keyName);
+		}
+
+		@After
+		public void after() {
+			redisTemplate.delete(keyName);
+		}
+
+		@Test
+		public void listFiles() throws InterruptedException {
+			for (int i = 1; i <= 3; i++) {
+				@SuppressWarnings("unchecked")
+				Message<String> received = (Message<String>) this.messageCollector.forChannel(sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
+
+				if (i == 3) {
+					assertNull("All files should have been seen already", received);
+				} else {
+					assertNotNull("No files were received, possibly all cached already?", received);
+
+					assertNotNull("Payload is null", received.getPayload());
+					String filename = received.getPayload();
+					assertEquals("Unexpected payload value", "sftpSource" + i + ".txt", filename);
+
+					assertNotNull("Headers are null", received.getHeaders());
+					MessageHeaders messageHeaders = received.getHeaders();
+					assertTrue("Remote file directory header missing", messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY));
+				}
+			}
+		}
+	}
+
 	@SpringBootApplication
 	public static class SftpSourceApplication {
 
 	}
-
 }
 

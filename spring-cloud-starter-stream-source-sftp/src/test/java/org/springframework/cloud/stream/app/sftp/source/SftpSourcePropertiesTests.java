@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 
@@ -120,6 +121,39 @@ public class SftpSourcePropertiesTests {
 		assertThat(properties.getRemoteFileSeparator(), equalTo("\\"));
 	}
 
+	@Test
+	public void listOnlyCanBeCustomized() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		EnvironmentTestUtils.addEnvironment(context, "sftp.listOnly:true");
+		context.register(Conf.class);
+		context.refresh();
+		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
+		assertTrue(properties.isListOnly());
+	}
+
+	@Test
+	public void taskLauncherOutputCanBeCustomized() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		EnvironmentTestUtils.addEnvironment(context, "sftp.taskLauncherOutput:true");
+		context.register(Conf.class);
+		context.refresh();
+		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
+		assertTrue(properties.isTaskLauncherOutput());
+	}
+
+	@Test(expected = AssertionError.class)
+	public void onlyAllowListOnlyOrTaskLauncherOutputEnabled() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		EnvironmentTestUtils.addEnvironment(context, "sftp.listOnly:true");
+		EnvironmentTestUtils.addEnvironment(context, "sftp.taskLauncherOutput:true");
+		context.register(Conf.class);
+
+		try {
+			context.refresh();
+		} catch (Exception e) { }
+
+		fail("listOnly and taskLauncherOutput cannot be enabled at the same time.");
+	}
 
 	@Test
 	public void preserveTimestampDirCanBeDisabled() {
