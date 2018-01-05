@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.test.util.EnvironmentTestUtils;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -37,90 +37,107 @@ import org.springframework.integration.test.util.TestUtils;
 /**
  * @author David Turanski
  * @author Gary Russell
+ * @author Artem Bilan
  */
 public class SftpSinkPropertiesTests {
 
 	@Test
 	public void remoteDirCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.remoteDir:/remote");
+		TestPropertyValues.of("sftp.remoteDir:/remote")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertThat(properties.getRemoteDir(), equalTo("/remote"));
+		context.close();
 	}
 
 	@Test
 	public void autoCreateDirCanBeDisabled() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.autoCreateDir:false");
+		TestPropertyValues.of("sftp.autoCreateDir:false")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertTrue(!properties.isAutoCreateDir());
+		context.close();
 	}
 
 	@Test
 	public void tmpFileSuffixCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.tmpFileSuffix:.foo");
+		TestPropertyValues.of("sftp.tmpFileSuffix:.foo")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertThat(properties.getTmpFileSuffix(), equalTo(".foo"));
+		context.close();
 	}
 
 	@Test
 	public void tmpFileRemoteDirCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.temporaryRemoteDir:/foo");
+		TestPropertyValues.of("sftp.temporaryRemoteDir:/foo")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertThat(properties.getTemporaryRemoteDir(), equalTo("/foo"));
+		context.close();
 	}
 
 	@Test
 	public void remoteFileSeparatorCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.remoteFileSeparator:\\");
+		TestPropertyValues.of("sftp.remoteFileSeparator:\\")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertThat(properties.getRemoteFileSeparator(), equalTo("\\"));
+		context.close();
 	}
 
 	@Test
 	public void useTemporaryFileNameCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.useTemporaryFilename:false");
+		TestPropertyValues.of("sftp.useTemporaryFilename:false")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertFalse(properties.isUseTemporaryFilename());
+		context.close();
 	}
 
 	@Test
 	public void fileExistsModeCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context, "sftp.mode:FAIL");
+		TestPropertyValues.of("sftp.mode:FAIL")
+				.applyTo(context);
 		context.register(Conf.class);
 		context.refresh();
 		SftpSinkProperties properties = context.getBean(SftpSinkProperties.class);
 		assertThat(properties.getMode(), equalTo(FileExistsMode.FAIL));
+		context.close();
 	}
 
 	@Test
 	public void knownHostsExpression() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		EnvironmentTestUtils.addEnvironment(context,
+		TestPropertyValues.of(
 				"sftp.factory.known-hosts-expression = @systemProperties[\"user.home\"] + \"/.ssh/known_hosts\"",
-				"sftp.factory.cache-sessions = true");
+				"sftp.factory.cache-sessions = true")
+				.applyTo(context);
 		context.register(Factory.class);
 		context.refresh();
 		SessionFactory<?> sessionFactory = context.getBean(SessionFactory.class);
 		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "sessionFactory.knownHosts"), endsWith(
 				"/.ssh/known_hosts"));
+		context.close();
 	}
 
 	@Configuration

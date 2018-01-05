@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,15 +23,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.sftp.Sftp;
-import org.springframework.integration.dsl.sftp.SftpMessageHandlerSpec;
 import org.springframework.integration.file.remote.session.SessionFactory;
+import org.springframework.integration.sftp.dsl.Sftp;
+import org.springframework.integration.sftp.dsl.SftpMessageHandlerSpec;
 import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 /**
  * @author Gary Russell
+ * @author Artem Bilan
  */
 @EnableBinding(Sink.class)
 @EnableConfigurationProperties(SftpSinkProperties.class)
@@ -44,17 +45,17 @@ public class SftpSinkConfiguration {
 	@Bean
 	public IntegrationFlow ftpInboundFlow(SftpSinkProperties properties, SessionFactory<LsEntry> ftpSessionFactory) {
 		SftpMessageHandlerSpec handlerSpec =
-			Sftp.outboundAdapter(new SftpRemoteFileTemplate(ftpSessionFactory), properties.getMode())
-				.remoteDirectory(properties.getRemoteDir())
-				.remoteFileSeparator(properties.getRemoteFileSeparator())
-				.autoCreateDirectory(properties.isAutoCreateDir())
-				.temporaryFileSuffix(properties.getTmpFileSuffix());
+				Sftp.outboundAdapter(new SftpRemoteFileTemplate(ftpSessionFactory), properties.getMode())
+						.remoteDirectory(properties.getRemoteDir())
+						.remoteFileSeparator(properties.getRemoteFileSeparator())
+						.autoCreateDirectory(properties.isAutoCreateDir())
+						.temporaryFileSuffix(properties.getTmpFileSuffix());
 		if (properties.getFilenameExpression() != null) {
 			handlerSpec.fileNameExpression(properties.getFilenameExpression().getExpressionString());
 		}
 		return IntegrationFlows.from(Sink.INPUT)
-			.handle(handlerSpec)
-			.get();
+				.handle(handlerSpec)
+				.get();
 	}
 
 }

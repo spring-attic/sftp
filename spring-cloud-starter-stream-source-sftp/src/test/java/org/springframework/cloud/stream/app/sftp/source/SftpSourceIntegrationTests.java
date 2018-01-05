@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +15,7 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -88,26 +89,28 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	public static class RefTests extends SftpSourceIntegrationTests {
 
 		@Test
+		@SuppressWarnings("unchecked")
 		public void sourceFilesAsRef() throws InterruptedException {
 			assertNull(this.streamingSource);
 			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
 					"source.synchronizer.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
 			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
 			for (int i = 1; i <= 2; i++) {
-				@SuppressWarnings("unchecked")
-				Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
+
+				Message<String> received = (Message<String>) messages.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
-				assertThat(received.getPayload(), equalTo(new File(config.getLocalDir() + "/sftpSource" + i + ".txt")));
+				assertThat(new File(received.getPayload().replaceAll("\"", "")),
+						equalTo(new File(config.getLocalDir() + File.separator + "sftpSource" + i + ".txt")));
 			}
 			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
 
 			File file = new File(getSourceRemoteDirectory(), prefix() + "Source1.txt");
 			file.setLastModified(System.currentTimeMillis() - 1_000_000);
 
-			@SuppressWarnings("unchecked")
-			Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
+			Message<String> received = (Message<String>) messages.poll(10, TimeUnit.SECONDS);
 			assertNotNull(received);
-			assertThat(received.getPayload(), equalTo(new File(config.getLocalDir() + "/sftpSource1.txt")));
+			assertThat(new File(received.getPayload().replaceAll("\"", "")),
+					equalTo(new File(config.getLocalDir() + File.separator + "sftpSource1.txt")));
 		}
 
 	}
@@ -151,7 +154,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 				Message<?> received = this.messageCollector.forChannel(sftpSource.output())
 						.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
-				assertThat(received.getPayload(), instanceOf(FileSplitter.FileMarker.class));
+				assertThat(received.getPayload(), instanceOf(String.class));
+				assertThat((String) received.getPayload(), containsString("mark=START"));
 				received = this.messageCollector.forChannel(sftpSource.output())
 						.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
@@ -159,7 +163,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 				received = this.messageCollector.forChannel(sftpSource.output())
 						.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
-				assertThat(received.getPayload(), instanceOf(FileSplitter.FileMarker.class));
+				assertThat(received.getPayload(), instanceOf(String.class));
+				assertThat((String) received.getPayload(), containsString("mark=END"));
 			}
 		}
 

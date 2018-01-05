@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 the original author or authors.
+ * Copyright 2015-2018 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,13 +18,10 @@ package org.springframework.cloud.stream.app.test.sftp;
 import java.io.File;
 import java.util.Collections;
 
-import org.apache.sshd.SshServer;
-import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.PasswordAuthenticator;
+import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.sftp.SftpSubsystem;
+import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -49,19 +46,11 @@ public class SftpTestSupport extends RemoteFileTestSupport {
 	@BeforeClass
 	public static void createServer() throws Exception {
 		server = SshServer.setUpDefaultServer();
-		server.setPasswordAuthenticator(new PasswordAuthenticator() {
-
-
-			@Override
-			public boolean authenticate(String username, String password,
-					org.apache.sshd.server.session.ServerSession session) {
-				return true;
-			}
-		});
+		server.setPasswordAuthenticator((username, password, session) -> true);
 		server.setPort(0);
-		server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("hostkey.ser"));
-		server.setSubsystemFactories(Collections.<NamedFactory<Command>>singletonList(new SftpSubsystem.Factory()));
-		server.setFileSystemFactory(new VirtualFileSystemFactory(remoteTemporaryFolder.getRoot().getAbsolutePath()));
+		server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser")));
+		server.setSubsystemFactories(Collections.singletonList(new SftpSubsystemFactory()));
+		server.setFileSystemFactory(new VirtualFileSystemFactory(remoteTemporaryFolder.getRoot().toPath()));
 		server.start();
 		System.setProperty("sftp.factory.port", String.valueOf(server.getPort()));
 		System.setProperty("sftp.localDir",
