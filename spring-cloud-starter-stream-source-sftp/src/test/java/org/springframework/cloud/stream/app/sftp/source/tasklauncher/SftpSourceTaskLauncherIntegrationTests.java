@@ -44,22 +44,22 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = {
-                "sftp.remoteDir = sftpSource",
-                "sftp.factory.username = foo",
-                "sftp.factory.password = foo",
-                "sftp.factory.allowUnknownKeys = true"
-        })
+		properties = {
+				"sftp.remoteDir = sftpSource",
+				"sftp.factory.username = foo",
+				"sftp.factory.password = foo",
+				"sftp.factory.allowUnknownKeys = true"
+		})
 @DirtiesContext
 public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSupport {
-    @Autowired
-    MessageCollector messageCollector;
+	@Autowired
+	MessageCollector messageCollector;
 
-    @Autowired
-    Source sftpSource;
+	@Autowired
+	Source sftpSource;
 
-    @Autowired
-    RedisTemplate<String, String> redisTemplate;
+	@Autowired
+	RedisTemplate<String, String> redisTemplate;
 
 	@TestPropertySource(properties = { "sftp.taskLauncherOutput = true",
 			"sftp.batch.batchResourceUri = file://some.jar",
@@ -84,7 +84,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 		public void pollAndAssertFiles() throws InterruptedException {
 			for (int i = 1; i <= 2; i++) {
 				@SuppressWarnings("unchecked")
-                Message<TaskLaunchRequest> received = (Message<TaskLaunchRequest>) this.messageCollector.forChannel(sftpSource.output())
+				Message<TaskLaunchRequest> received = (Message<TaskLaunchRequest>) this.messageCollector.forChannel(sftpSource.output())
 						.poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);

@@ -1,6 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
- *
+ * Copyright 2015-2018 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,25 +13,19 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source.metadata;
+package org.springframework.cloud.stream.app.sftp.source.postprocessor;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.app.postprocessor.ContentTypeEnvironmentPostProcessor;
 
 /**
+ * Sets the content type to use if not specified by user properties.
+ *
  * @author Chris Schaefer
  */
-@ConfigurationProperties("sftp.metadata.redis")
-public class SftpSourceRedisIdempotentReceiverProperties {
-	/**
-	 * The key name to use when storing file metadata. Defaults to "sftpSource".
-	 */
-	private String keyName = "sftpSource";
+public class SftpContentTypeEnvironmentPostProcessor extends ContentTypeEnvironmentPostProcessor {
+	private static final String CONTENT_TYPE = "application/x-java-serialized-object";
 
-	public String getKeyName() {
-		return keyName;
-	}
-
-	public void setKeyName(String keyName) {
-		this.keyName = keyName;
+	public SftpContentTypeEnvironmentPostProcessor() {
+		super(CONTENT_TYPE);
 	}
 }

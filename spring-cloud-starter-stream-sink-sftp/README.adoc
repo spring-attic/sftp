@@ -39,19 +39,19 @@ The **$$sftp$$** $$sink$$ has the following options:
 $$sftp.auto-create-dir$$:: $$Whether or not to create the remote directory.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
-$$sftp.factory.host$$:: $$The host name of the server.$$ *($$String)$$, default: `$$localhost$$`)*
+$$sftp.factory.host$$:: $$The host name of the server.$$ *($$String$$, default: `$$localhost$$`)*
 $$sftp.factory.known-hosts-expression$$:: $$A SpEL expression resolving to the location of the known hosts file.$$ *($$Expression$$, default: `$$<none>$$`)*
 $$sftp.factory.pass-phrase$$:: $$Passphrase for user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.factory.password$$:: $$The password to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.factory.port$$:: $$The port of the server.$$ *($$Integer$$, default: `$$22$$`)*
 $$sftp.factory.private-key$$:: $$Resource location of user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
-$$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String)$$, default: `$$<none>$$`)*
+$$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.filename-expression$$:: $$A SpEL expression to generate the remote file name.$$ *($$Expression$$, default: `$$<none>$$`)*
-$$sftp.mode$$:: $$Action to take if the remote file already exists.$$ *($$FileExistsMode)$$, default: `$$<none>$$`)*
-$$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String)$$, default: `$$/$$`)*
-$$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String)$$, default: `$$/$$`)*
-$$sftp.temporary-remote-dir$$:: $$A temporary directory where the file will be written if 'isUseTemporaryFilename()' is true.$$ *($$String)$$, default: `$$/$$`)*
-$$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String)$$, default: `$$.tmp$$`)*
+$$sftp.mode$$:: $$Action to take if the remote file already exists.$$ *($$FileExistsMode$$, default: `$$<none>$$`, possible values: `APPEND`,`APPEND_NO_FLUSH`,`FAIL`,`IGNORE`,`REPLACE`,`REPLACE_IF_MODIFIED`)*
+$$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
+$$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
+$$sftp.temporary-remote-dir$$:: $$A temporary directory where the file will be written if 'isUseTemporaryFilename()' is true.$$ *($$String$$, default: `$$/$$`)*
+$$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$sftp.use-temporary-filename$$:: $$Whether or not to write to a temporary file and rename.$$ *($$Boolean$$, default: `$$true$$`)*
 //end::configuration-properties[]
 

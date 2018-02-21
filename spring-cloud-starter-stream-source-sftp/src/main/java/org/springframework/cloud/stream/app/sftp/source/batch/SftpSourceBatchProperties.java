@@ -31,141 +31,155 @@ import java.util.List;
 @Validated
 @ConfigurationProperties("sftp.batch")
 public class SftpSourceBatchProperties {
-    protected static final String DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME = "localFilePath";
-    protected static final String DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME = "remoteFilePath";
+	protected static final String DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME = "localFilePath";
+	protected static final String DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME = "remoteFilePath";
 
-    /**
-     * The URI of the batch artifact to be applied to the TaskLaunchRequest.
-     */
-    private String batchResourceUri = "";
+	/**
+	 * The URI of the batch artifact to be applied to the TaskLaunchRequest.
+	 */
+	private String batchResourceUri = "";
 
-    /**
-     * The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
-     * JDBC datasource url.
-     */
-    private String dataSourceUrl = "jdbc:h2:tcp://localhost:19092/mem:dataflow";
+	/**
+	 * The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
+	 * JDBC datasource url.
+	 */
+	private String dataSourceUrl = "jdbc:h2:tcp://localhost:19092/mem:dataflow";
 
-    /**
-     * The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"
-     */
-    private String dataSourceUserName = "sa";
+	/**
+	 * The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"
+	 */
+	private String dataSourceUserName = "sa";
 
-    /**
-     * The datasource password to be applied to the TaskLaunchRequest.
-     */
-    private String dataSourcePassword;
+	/**
+	 * The datasource password to be applied to the TaskLaunchRequest.
+	 */
+	private String dataSourcePassword;
 
-    /**
-     * Comma delimited list of deployment properties to be applied to the
-     * TaskLaunchRequest.
-     */
-    private String deploymentProperties;
+	/**
+	 * Comma delimited list of deployment properties to be applied to the
+	 * TaskLaunchRequest.
+	 */
+	private String deploymentProperties;
 
-    /**
-     * Value to use as the remote file job parameter name. Defaults to "remoteFilePath".
-     */
-    private String remoteFilePathJobParameterName = DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME;
+	/**
+	 * Comma delimited list of environment properties to be applied to the
+	 * TaskLaunchRequest.
+	 */
+	private String environmentProperties;
 
-    /**
-     * Value to use as the local file job parameter name. Defaults to "localFilePath".
-     */
-    private String localFilePathJobParameterName = DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME;
+	/**
+	 * Value to use as the remote file job parameter name. Defaults to "remoteFilePath".
+	 */
+	private String remoteFilePathJobParameterName = DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME;
 
-    /**
-     * The file path to use as the local file job parameter value. Defaults to "java.io.tmpdir".
-     */
-    private String localFilePathJobParameterValue = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
+	/**
+	 * Value to use as the local file job parameter name. Defaults to "localFilePath".
+	 */
+	private String localFilePathJobParameterName = DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME;
 
-    /**
-     * Comma separated list of optional job parameters in key=value format.
-     */
-    private List<String> jobParameters = new ArrayList<>();
+	/**
+	 * The file path to use as the local file job parameter value. Defaults to "java.io.tmpdir".
+	 */
+	private String localFilePathJobParameterValue = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
 
-    @NotNull
-    public String getBatchResourceUri() {
-        return batchResourceUri;
-    }
+	/**
+	 * Comma separated list of optional job parameters in key=value format.
+	 */
+	private List<String> jobParameters = new ArrayList<>();
 
-    public void setBatchResourceUri(String batchResourceUri) {
-        this.batchResourceUri = batchResourceUri;
-    }
+	@NotNull
+	public String getBatchResourceUri() {
+		return batchResourceUri;
+	}
 
-    @NotBlank
-    public String getDataSourceUrl() {
-        return dataSourceUrl;
-    }
+	public void setBatchResourceUri(String batchResourceUri) {
+		this.batchResourceUri = batchResourceUri;
+	}
 
-    public void setDataSourceUrl(String dataSourceUrl) {
-        this.dataSourceUrl = dataSourceUrl;
-    }
+	@NotBlank
+	public String getDataSourceUrl() {
+		return dataSourceUrl;
+	}
 
-    @NotBlank
-    public String getDataSourceUserName() {
-        return dataSourceUserName;
-    }
+	public void setDataSourceUrl(String dataSourceUrl) {
+		this.dataSourceUrl = dataSourceUrl;
+	}
 
-    public void setDataSourceUserName(String dataSourceUserName) {
-        this.dataSourceUserName = dataSourceUserName;
-    }
+	@NotBlank
+	public String getDataSourceUserName() {
+		return dataSourceUserName;
+	}
 
-    public String getDataSourcePassword() {
-        return dataSourcePassword;
-    }
+	public void setDataSourceUserName(String dataSourceUserName) {
+		this.dataSourceUserName = dataSourceUserName;
+	}
 
-    public void setDataSourcePassword(String dataSourcePassword) {
-        this.dataSourcePassword = dataSourcePassword;
-    }
+	public String getDataSourcePassword() {
+		return dataSourcePassword;
+	}
 
-    public String getDeploymentProperties() {
-        return deploymentProperties;
-    }
+	public void setDataSourcePassword(String dataSourcePassword) {
+		this.dataSourcePassword = dataSourcePassword;
+	}
 
-    public void setDeploymentProperties(String deploymentProperties) {
-        this.deploymentProperties = deploymentProperties;
-    }
+	public String getDeploymentProperties() {
+		return deploymentProperties;
+	}
 
-    public String getRemoteFilePathJobParameterName() {
-        if (remoteFilePathJobParameterName != null) {
-            return remoteFilePathJobParameterName.trim();
-        }
+	public void setDeploymentProperties(String deploymentProperties) {
+		this.deploymentProperties = deploymentProperties;
+	}
 
-        return null;
-    }
+	public String getEnvironmentProperties() {
+		return environmentProperties;
+	}
 
-    public void setRemoteFilePathJobParameterName(String remoteFilePathJobParameterName) {
-        this.remoteFilePathJobParameterName = remoteFilePathJobParameterName;
-    }
+	public void setEnvironmentProperties(String environmentProperties) {
+		this.environmentProperties = environmentProperties;
+	}
 
-    public String getLocalFilePathJobParameterName() {
-        if (localFilePathJobParameterName != null) {
-            return localFilePathJobParameterName.trim();
-        }
+	public String getRemoteFilePathJobParameterName() {
+		if (remoteFilePathJobParameterName != null) {
+			return remoteFilePathJobParameterName.trim();
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    public void setLocalFilePathJobParameterName(String localFilePathJobParameterName) {
-        this.localFilePathJobParameterName = localFilePathJobParameterName;
-    }
+	public void setRemoteFilePathJobParameterName(String remoteFilePathJobParameterName) {
+		this.remoteFilePathJobParameterName = remoteFilePathJobParameterName;
+	}
 
-    @NotBlank
-    public String getLocalFilePathJobParameterValue() {
-        if (localFilePathJobParameterValue != null) {
-            return localFilePathJobParameterValue;
-        }
+	public String getLocalFilePathJobParameterName() {
+		if (localFilePathJobParameterName != null) {
+			return localFilePathJobParameterName.trim();
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    public void setLocalFilePathJobParameterValue(String localFilePathJobParameterValue) {
-        this.localFilePathJobParameterValue = localFilePathJobParameterValue;
-    }
+	public void setLocalFilePathJobParameterName(String localFilePathJobParameterName) {
+		this.localFilePathJobParameterName = localFilePathJobParameterName;
+	}
 
-    public List<String> getJobParameters() {
-        return jobParameters;
-    }
+	@NotBlank
+	public String getLocalFilePathJobParameterValue() {
+		if (localFilePathJobParameterValue != null) {
+			return localFilePathJobParameterValue;
+		}
 
-    public void setJobParameters(List<String> jobParameters) {
-        this.jobParameters = jobParameters;
-    }
+		return null;
+	}
+
+	public void setLocalFilePathJobParameterValue(String localFilePathJobParameterValue) {
+		this.localFilePathJobParameterValue = localFilePathJobParameterValue;
+	}
+
+	public List<String> getJobParameters() {
+		return jobParameters;
+	}
+
+	public void setJobParameters(List<String> jobParameters) {
+		this.jobParameters = jobParameters;
+	}
 }

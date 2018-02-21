@@ -188,13 +188,14 @@ public class SftpSourceConfiguration {
 	@Transformer(inputChannel = "sftpFileListChannel", outputChannel = Source.OUTPUT)
 	public String transformSftpMessage(Message message) {
 		Assert.notNull(message, "Cannot transform null message");
-		Assert.notNull(message.getPayload(), "Filename in payload cannot be null");
 
 		MessageHeaders messageHeaders = message.getHeaders();
 		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
 		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY), "Remote directory header not found");
 
 		String fileName = (String) message.getPayload();
+		Assert.hasText(fileName, "Filename in payload cannot be empty");
+
 		String fileDir = (String) messageHeaders.get(FileHeaders.REMOTE_DIRECTORY);
 
 		return fileDir + fileName;

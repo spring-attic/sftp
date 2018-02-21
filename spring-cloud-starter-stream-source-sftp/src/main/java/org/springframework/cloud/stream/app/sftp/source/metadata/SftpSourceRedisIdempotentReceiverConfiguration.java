@@ -38,44 +38,44 @@ import org.springframework.util.Assert;
  */
 @EnableConfigurationProperties({ SftpSourceRedisIdempotentReceiverProperties.class, RedisProperties.class })
 public class SftpSourceRedisIdempotentReceiverConfiguration {
-    protected static final String REMOTE_DIRECTORY_MESSAGE_HEADER = "file_remoteDirectory";
+	protected static final String REMOTE_DIRECTORY_MESSAGE_HEADER = "file_remoteDirectory";
 
-    @Autowired
-    private BeanFactory beanFactory;
+	@Autowired
+	private BeanFactory beanFactory;
 
-    @Autowired
-    private RedisConnectionFactory redisConnectionFactory;
+	@Autowired
+	private RedisConnectionFactory redisConnectionFactory;
 
-    @Autowired
-    private SftpSourceRedisIdempotentReceiverProperties sftpSourceRedisIdempotentReceiverProperties;
+	@Autowired
+	private SftpSourceRedisIdempotentReceiverProperties sftpSourceRedisIdempotentReceiverProperties;
 
-    @Bean
-    @ConditionalOnMissingBean
-    public IdempotentReceiverInterceptor idempotentReceiverInterceptor() {
-        String expressionStatement = new StringBuilder()
-                .append("headers['")
-                .append(REMOTE_DIRECTORY_MESSAGE_HEADER)
-                .append("'].concat(payload)")
-                .toString();
+	@Bean
+	@ConditionalOnMissingBean
+	public IdempotentReceiverInterceptor idempotentReceiverInterceptor() {
+		String expressionStatement = new StringBuilder()
+				.append("headers['")
+				.append(REMOTE_DIRECTORY_MESSAGE_HEADER)
+				.append("'].concat(payload)")
+				.toString();
 
-        Expression expression = new SpelExpressionParser().parseExpression(expressionStatement);
+		Expression expression = new SpelExpressionParser().parseExpression(expressionStatement);
 
-        ExpressionEvaluatingMessageProcessor<String> idempotentKeyStrategy =
-                new ExpressionEvaluatingMessageProcessor<>(expression);
-        idempotentKeyStrategy.setBeanFactory(beanFactory);
+		ExpressionEvaluatingMessageProcessor<String> idempotentKeyStrategy =
+				new ExpressionEvaluatingMessageProcessor<>(expression);
+		idempotentKeyStrategy.setBeanFactory(beanFactory);
 
-        IdempotentReceiverInterceptor idempotentReceiverInterceptor =
-                new IdempotentReceiverInterceptor(new MetadataStoreSelector(idempotentKeyStrategy, metadataStore()));
-        idempotentReceiverInterceptor.setDiscardChannel(new NullChannel());
+		IdempotentReceiverInterceptor idempotentReceiverInterceptor =
+				new IdempotentReceiverInterceptor(new MetadataStoreSelector(idempotentKeyStrategy, metadataStore()));
+		idempotentReceiverInterceptor.setDiscardChannel(new NullChannel());
 
-        return idempotentReceiverInterceptor;
-    }
+		return idempotentReceiverInterceptor;
+	}
 
-    @Bean
-    @ConditionalOnMissingBean
-    public ConcurrentMetadataStore metadataStore() {
-        Assert.notNull(redisConnectionFactory, "A RedisConnectionFactory is required.");
+	@Bean
+	@ConditionalOnMissingBean
+	public ConcurrentMetadataStore metadataStore() {
+		Assert.notNull(redisConnectionFactory, "A RedisConnectionFactory is required.");
 
-        return new RedisMetadataStore(redisConnectionFactory, sftpSourceRedisIdempotentReceiverProperties.getKeyName());
-    }
+		return new RedisMetadataStore(redisConnectionFactory, sftpSourceRedisIdempotentReceiverProperties.getKeyName());
+	}
 }

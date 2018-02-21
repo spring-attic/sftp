@@ -75,41 +75,43 @@ $$file.consumer.markers-json$$:: $$When 'fileMarkers == true', specify if they s
 $$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources.
  Values are 'ref' - The File object,
  'lines' - a message per line, or
- 'contents' - the contents as bytes.$$ *($$FileReadingMode)$$, default: `$$<none>$$`)*
+ 'contents' - the contents as bytes.$$ *($$FileReadingMode$$, default: `$$<none>$$`, possible values: `ref`,`lines`,`contents`)*
 $$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data.
  	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.auto-create-local-dir$$:: $$Set to true to create the local directory if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
-$$sftp.batch.batch-resource-uri$$:: $$The URI of the batch artifact to be applied to the TaskLaunchRequest.$$ *($$String)$$, default: `$$<empty string>$$`)*
+$$sftp.batch.batch-resource-uri$$:: $$The URI of the batch artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.batch.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.batch.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
- JDBC datasource url.$$ *($$String)$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
-$$sftp.batch.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String)$$, default: `$$sa$$`)*
+ JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
+$$sftp.batch.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
 $$sftp.batch.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the
+ TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.batch.environment-properties$$:: $$Comma delimited list of environment properties to be applied to the
  TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.batch.job-parameters$$:: $$Comma separated list of optional job parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
 $$sftp.batch.local-file-path-job-parameter-name$$:: $$Value to use as the local file job parameter name. Defaults to "localFilePath".$$ *($$String$$, default: `$$localFilePath$$`)*
-$$sftp.batch.local-file-path-job-parameter-value$$:: $$The file path to use as the local file job parameter value. Defaults to "java.io.tmpdir".$$ *($$String)$$, default: `$$<none>$$`)*
+$$sftp.batch.local-file-path-job-parameter-value$$:: $$The file path to use as the local file job parameter value. Defaults to "java.io.tmpdir".$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.batch.remote-file-path-job-parameter-name$$:: $$Value to use as the remote file job parameter name. Defaults to "remoteFilePath".$$ *($$String$$, default: `$$remoteFilePath$$`)*
 $$sftp.delete-remote-files$$:: $$Set to true to delete remote files after successful transfer.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
-$$sftp.factory.host$$:: $$The host name of the server.$$ *($$String)$$, default: `$$localhost$$`)*
+$$sftp.factory.host$$:: $$The host name of the server.$$ *($$String$$, default: `$$localhost$$`)*
 $$sftp.factory.known-hosts-expression$$:: $$A SpEL expression resolving to the location of the known hosts file.$$ *($$Expression$$, default: `$$<none>$$`)*
 $$sftp.factory.pass-phrase$$:: $$Passphrase for user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.factory.password$$:: $$The password to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.factory.port$$:: $$The port of the server.$$ *($$Integer$$, default: `$$22$$`)*
 $$sftp.factory.private-key$$:: $$Resource location of user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
-$$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String)$$, default: `$$<none>$$`)*
+$$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.filename-pattern$$:: $$A filter pattern to match the names of files to transfer.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.filename-regex$$:: $$A filter regex pattern to match the names of files to transfer.$$ *($$Pattern$$, default: `$$<none>$$`)*
 $$sftp.list-only$$:: $$Set to true to return file metadata without the entire payload.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File)$$, default: `$$<none>$$`)*
+$$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
-$$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String)$$, default: `$$/$$`)*
-$$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String)$$, default: `$$/$$`)*
+$$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
+$$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.task-launcher-output$$:: $$Set to true to create output suitable for a task launch request.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String)$$, default: `$$.tmp$$`)*
+$$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.fixed-delay$$:: $$Fixed delay for periodic triggers.$$ *($$Integer$$, default: `$$1$$`)*
