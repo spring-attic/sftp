@@ -139,11 +139,7 @@ public class SftpSourceBatchProperties {
 	}
 
 	public String getRemoteFilePathJobParameterName() {
-		if (remoteFilePathJobParameterName != null) {
-			return remoteFilePathJobParameterName.trim();
-		}
-
-		return null;
+		return remoteFilePathJobParameterName;
 	}
 
 	public void setRemoteFilePathJobParameterName(String remoteFilePathJobParameterName) {
@@ -151,11 +147,7 @@ public class SftpSourceBatchProperties {
 	}
 
 	public String getLocalFilePathJobParameterName() {
-		if (localFilePathJobParameterName != null) {
-			return localFilePathJobParameterName.trim();
-		}
-
-		return null;
+		return localFilePathJobParameterName;
 	}
 
 	public void setLocalFilePathJobParameterName(String localFilePathJobParameterName) {
@@ -164,11 +156,7 @@ public class SftpSourceBatchProperties {
 
 	@NotBlank
 	public String getLocalFilePathJobParameterValue() {
-		if (localFilePathJobParameterValue != null) {
-			return localFilePathJobParameterValue;
-		}
-
-		return null;
+		return localFilePathJobParameterValue;
 	}
 
 	public void setLocalFilePathJobParameterValue(String localFilePathJobParameterValue) {

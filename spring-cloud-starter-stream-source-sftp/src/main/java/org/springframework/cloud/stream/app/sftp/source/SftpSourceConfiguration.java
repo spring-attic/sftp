@@ -54,7 +54,6 @@ import org.springframework.integration.sftp.dsl.SftpStreamingInboundChannelAdapt
 import org.springframework.integration.sftp.filters.SftpPersistentAcceptOnceFileListFilter;
 import org.springframework.integration.sftp.filters.SftpRegexPatternFileListFilter;
 import org.springframework.integration.sftp.filters.SftpSimplePatternFileListFilter;
-import org.springframework.integration.sftp.gateway.SftpOutboundGateway;
 import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.transaction.DefaultTransactionSynchronizationFactory;
@@ -62,7 +61,6 @@ import org.springframework.integration.transaction.PseudoTransactionManager;
 import org.springframework.integration.transaction.TransactionSynchronizationProcessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
@@ -135,7 +133,9 @@ public class SftpSourceConfiguration {
 		}
 		else if (properties.isListOnly() || properties.isTaskLauncherOutput()) {
 			return IntegrationFlows.from(sftpInboundMessageSource(), consumerSpec())
-					.handle(sftpGatewayMessageHandler(sftpSessionFactory))
+					.handle(Sftp.outboundGateway(sftpSessionFactory,
+							AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
+							.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
 					.split()
 					.channel(properties.isListOnly() ? sftpFileListChannel() : sftpFileTaskLaunchChannel())
 					.get();
@@ -187,8 +187,6 @@ public class SftpSourceConfiguration {
 	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@Transformer(inputChannel = "sftpFileListChannel", outputChannel = Source.OUTPUT)
 	public String transformSftpMessage(Message message) {
-		Assert.notNull(message, "Cannot transform null message");
-
 		MessageHeaders messageHeaders = message.getHeaders();
 		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
 		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY), "Remote directory header not found");
@@ -203,13 +201,5 @@ public class SftpSourceConfiguration {
 
 	private MessageSource<String> sftpInboundMessageSource() {
 		return () -> MessageBuilder.withPayload(properties.getRemoteDir()).build();
-	}
-
-	private MessageHandler sftpGatewayMessageHandler(SessionFactory<LsEntry> sftpSessionFactory) {
-		SftpOutboundGateway sftpOutboundGateway = new SftpOutboundGateway(sftpSessionFactory,
-				AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload");
-		sftpOutboundGateway.setOptions(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption());
-
-		return sftpOutboundGateway;
 	}
 }
