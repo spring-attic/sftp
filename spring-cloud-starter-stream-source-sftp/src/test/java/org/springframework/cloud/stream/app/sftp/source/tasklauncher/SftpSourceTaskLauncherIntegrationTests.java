@@ -15,7 +15,7 @@
 
 package org.springframework.cloud.stream.app.sftp.source.tasklauncher;
 
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,8 +75,8 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 		@Value("${sftp.metadata.redis.keyName}")
 		private String keyName;
 
-		@Before
-		public void before() {
+		@After
+		public void after() {
 			redisTemplate.delete(keyName);
 		}
 
@@ -119,8 +119,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 			String file1 = "sftpSource/sftpSource1.txt";
 			String file2 = "sftpSource/sftpSource2.txt";
 
-			Thread.sleep(2000); // wait for redis to catch up
-			Map<Object, Object> entries = redisTemplate.opsForHash().entries("sftpSourceTest");
+			Map<Object, Object> entries = redisTemplate.opsForHash().entries(keyName);
 			assertTrue("Idempotent datastore contains invalid number of entries, expected 2 and got: " + entries.size(), entries.size() == 2);
 			assertTrue("Idempotent datastore does not contain expected key: " + file1, entries.containsKey(file1));
 			assertTrue("Idempotent datastore does not contain expected key: " + file2, entries.containsKey(file2));

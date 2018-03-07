@@ -51,7 +51,7 @@ public class SftpSourceRedisIdempotentReceiverConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public IdempotentReceiverInterceptor idempotentReceiverInterceptor() {
+	public IdempotentReceiverInterceptor idempotentReceiverInterceptor(ConcurrentMetadataStore metadataStore) {
 		String expressionStatement = new StringBuilder()
 				.append("headers['")
 				.append(REMOTE_DIRECTORY_MESSAGE_HEADER)
@@ -65,7 +65,7 @@ public class SftpSourceRedisIdempotentReceiverConfiguration {
 		idempotentKeyStrategy.setBeanFactory(beanFactory);
 
 		IdempotentReceiverInterceptor idempotentReceiverInterceptor =
-				new IdempotentReceiverInterceptor(new MetadataStoreSelector(idempotentKeyStrategy, metadataStore()));
+				new IdempotentReceiverInterceptor(new MetadataStoreSelector(idempotentKeyStrategy, metadataStore));
 		idempotentReceiverInterceptor.setDiscardChannel(new NullChannel());
 
 		return idempotentReceiverInterceptor;

@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -42,7 +42,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
-import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
 import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
@@ -70,9 +69,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 	})
 @DirtiesContext
 public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
-
-	@Autowired
-	ApplicationContext applicationContext;
 
 	@Autowired
 	SourcePollingChannelAdapter sourcePollingChannelAdapter;
@@ -186,8 +182,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		@Value("${sftp.metadata.redis.keyName}")
 		private String keyName;
 
-		@Before
-		public void before() {
+		@After
+		public void after() {
 			redisTemplate.delete(keyName);
 		}
 
@@ -208,8 +204,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			String file1 = "sftpSource/sftpSource1.txt";
 			String file2 = "sftpSource/sftpSource2.txt";
 
-			Thread.sleep(2000); // wait for redis to catch up
-			Map<Object, Object> entries = redisTemplate.opsForHash().entries("sftpSourceTest");
+			Map<Object, Object> entries = redisTemplate.opsForHash().entries(keyName);
 			assertTrue("Idempotent datastore contains invalid number of entries, expected 2 and got: " + entries.size(), entries.size() == 2);
 			assertTrue("Idempotent datastore does not contain expected key: " + file1, entries.containsKey(file1));
 			assertTrue("Idempotent datastore does not contain expected key: " + file2, entries.containsKey(file2));
