@@ -15,6 +15,7 @@
 
 package org.springframework.cloud.stream.app.sftp.source.tasklauncher;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,8 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -61,6 +64,8 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 	@Autowired
 	RedisTemplate<String, String> redisTemplate;
 
+	protected final ObjectMapper objectMapper = new ObjectMapper();
+
 	@TestPropertySource(properties = { "sftp.taskLauncherOutput = true",
 			"sftp.batch.batchResourceUri = file://some.jar",
 			"sftp.batch.dataSourceUserName = sa",
@@ -81,15 +86,15 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 		}
 
 		@Test
-		public void pollAndAssertFiles() throws InterruptedException {
+		public void pollAndAssertFiles() throws Exception {
 			for (int i = 1; i <= 2; i++) {
 				@SuppressWarnings("unchecked")
-				Message<TaskLaunchRequest> received = (Message<TaskLaunchRequest>) this.messageCollector.forChannel(sftpSource.output())
-						.poll(10, TimeUnit.SECONDS);
+				Message<?> received = this.messageCollector.forChannel(sftpSource.output()).poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);
+				assertThat(received.getPayload(), instanceOf(String.class));
 
-				TaskLaunchRequest taskLaunchRequest = received.getPayload();
+				TaskLaunchRequest taskLaunchRequest = objectMapper.readValue((String) received.getPayload(), TaskLaunchRequest.class);
 				assertNotNull(taskLaunchRequest);
 
 				assertEquals("Unexpected number of deployment properties", 0, taskLaunchRequest.getDeploymentProperties().size());

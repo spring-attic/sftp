@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,21 +89,25 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	@Autowired
 	RedisTemplate<String, String> redisTemplate;
 
+	protected final ObjectMapper objectMapper = new ObjectMapper();
+
 	@TestPropertySource(properties = "file.consumer.mode = ref")
 	public static class RefTests extends SftpSourceIntegrationTests {
 
 		@Test
 		@SuppressWarnings("unchecked")
-		public void sourceFilesAsRef() throws InterruptedException {
+		public void sourceFilesAsRef() throws Exception {
 			assertNull(this.streamingSource);
 			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
 					"source.synchronizer.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
 			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
 			for (int i = 1; i <= 2; i++) {
-
-				Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
+				Message<?> received =  messages.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
-				assertThat(received.getPayload(),
+				assertThat(received.getPayload(), instanceOf(String.class));
+				File payload = objectMapper.readValue((String) received.getPayload(), File.class);
+
+				assertThat(payload,
 						equalTo(new File(config.getLocalDir() + File.separator + "sftpSource" + i + ".txt")));
 			}
 			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
@@ -110,9 +115,11 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			File file = new File(getSourceRemoteDirectory(), prefix() + "Source1.txt");
 			file.setLastModified(System.currentTimeMillis() - 1_000_000);
 
-			Message<File> received = (Message<File>) messages.poll(10, TimeUnit.SECONDS);
+			Message<?> received = messages.poll(10, TimeUnit.SECONDS);
 			assertNotNull(received);
-			assertThat(received.getPayload(),
+			assertThat(received.getPayload(), instanceOf(String.class));
+			File payload = objectMapper.readValue((String) received.getPayload(), File.class);
+			assertThat(payload,
 					equalTo(new File(config.getLocalDir() + File.separator + "sftpSource1.txt")));
 		}
 
