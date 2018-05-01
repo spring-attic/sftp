@@ -53,9 +53,9 @@ public class SftpSourceTaskLauncherConfiguration {
 
 	protected static final String SFTP_PASSWORD_PROPERTY_KEY = "sftp_password";
 
-	protected static final String DATASOURCE_URL_PROPERTY_KEY = "spring_datasource_url";
+	protected static final String DATASOURCE_URL_PROPERTY_KEY = "spring.datasource.url";
 
-	protected static final String DATASOURCE_USERNAME_PROPERTY_KEY = "spring_datasource_username";
+	protected static final String DATASOURCE_USERNAME_PROPERTY_KEY = "spring.datasource.username";
 
 	private SftpSourceProperties sftpSourceProperties;
 
