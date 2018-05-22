@@ -32,10 +32,13 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
-import org.springframework.integration.annotation.Transformer;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.file.FileHeaders;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -70,10 +73,12 @@ public class SftpSourceTaskLauncherConfiguration {
 
 	@ConditionalOnProperty(name = "sftp.taskLauncherOutput")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@Transformer(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
-	public TaskLaunchRequest sftpFileTaskLauncherTransformer(Message message) {
-		return new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(), getCommandLineArgs(message),
+	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
+	public Message sftpFileTaskLauncherTransformer(Message message) {
+		TaskLaunchRequest outboundPayload = new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(), getCommandLineArgs(message),
 				getEnvironmentProperties(), getDeploymentProperties(), null);
+		return MessageBuilder.withPayload(outboundPayload).copyHeaders(message.getHeaders())
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 	}
 
 	private Map<String, String> getEnvironmentProperties() {

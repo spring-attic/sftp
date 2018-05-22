@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.app.sftp.source;
 import java.util.Collections;
 import java.util.function.Consumer;
 
+import com.jcraft.jsch.ChannelSftp.LsEntry;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,9 +37,8 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
-import org.springframework.integration.annotation.Transformer;
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -55,24 +56,24 @@ import org.springframework.integration.sftp.filters.SftpPersistentAcceptOnceFile
 import org.springframework.integration.sftp.filters.SftpRegexPatternFileListFilter;
 import org.springframework.integration.sftp.filters.SftpSimplePatternFileListFilter;
 import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
-import org.springframework.integration.support.MessageBuilder;
 import org.springframework.integration.transaction.DefaultTransactionSynchronizationFactory;
 import org.springframework.integration.transaction.PseudoTransactionManager;
 import org.springframework.integration.transaction.TransactionSynchronizationProcessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
-
-import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 /**
  * @author Gary Russell
  * @author Artem Bilan
  * @author Chris Schaefer
+ * @author Christian Tzolov
  */
 @EnableBinding(Source.class)
 @EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class })
@@ -186,8 +187,8 @@ public class SftpSourceConfiguration {
 
 	@ConditionalOnProperty(name = "sftp.listOnly")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@Transformer(inputChannel = "sftpFileListChannel", outputChannel = Source.OUTPUT)
-	public String transformSftpMessage(Message message) {
+	@ServiceActivator(inputChannel = "sftpFileListChannel", outputChannel = Source.OUTPUT)
+	public Message transformSftpMessage(Message message) {
 		MessageHeaders messageHeaders = message.getHeaders();
 		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
 		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY), "Remote directory header not found");
@@ -197,7 +198,10 @@ public class SftpSourceConfiguration {
 
 		String fileDir = (String) messageHeaders.get(FileHeaders.REMOTE_DIRECTORY);
 
-		return fileDir + fileName;
+		String outboundPayload = fileDir + fileName;
+
+		return MessageBuilder.withPayload(outboundPayload).copyHeaders(messageHeaders)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
 	}
 
 }

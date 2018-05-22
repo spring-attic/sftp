@@ -38,9 +38,11 @@ import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.MimeTypeUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -77,8 +79,8 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 			"sftp.factory.host = 127.0.0.1",
 			"sftp.factory.username = user",
 			"sftp.factory.password = pass",
-			"sftp.metadata.redis.keyName = sftpSourceTest",
-			"spring.cloud.stream.bindings.output.content-type = application/x-java-serialized-object" })
+			"sftp.metadata.redis.keyName = sftpSourceTest"
+	})
 	public static class TaskLauncherOutputTests extends SftpSourceTaskLauncherIntegrationTests {
 
 		@Value("${sftp.metadata.redis.keyName}")
@@ -96,9 +98,10 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 				Message<?> received = this.messageCollector.forChannel(this.sftpSource.output()).poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);
-				assertThat(received.getPayload(), instanceOf(TaskLaunchRequest.class));
+				assertThat(received.getPayload(), instanceOf(String.class));
 
-				TaskLaunchRequest taskLaunchRequest = (TaskLaunchRequest) received.getPayload();
+				assertEquals(MimeTypeUtils.APPLICATION_JSON, received.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+				TaskLaunchRequest taskLaunchRequest = new ObjectMapper().readValue((String) received.getPayload(), TaskLaunchRequest.class);
 				assertNotNull(taskLaunchRequest);
 
 				assertEquals("Unexpected number of deployment properties", 0,

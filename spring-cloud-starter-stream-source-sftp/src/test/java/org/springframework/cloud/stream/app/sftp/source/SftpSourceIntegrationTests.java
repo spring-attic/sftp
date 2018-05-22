@@ -47,9 +47,11 @@ import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
 import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.MimeTypeUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -204,7 +206,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 						.poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);
-
+				assertEquals(MimeTypeUtils.TEXT_PLAIN, received.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 				assertNotNull("Payload is null", received.getPayload());
 				String filename = received.getPayload();
 				assertEquals("Unexpected payload value", "sftpSource/sftpSource" + i + ".txt", filename);
