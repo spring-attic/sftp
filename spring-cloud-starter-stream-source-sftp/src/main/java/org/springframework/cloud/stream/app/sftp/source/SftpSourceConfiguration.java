@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.app.file.FileConsumerProperties;
+import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceRedisIdempotentReceiverConfiguration;
@@ -155,8 +156,11 @@ public class SftpSourceConfiguration {
 
 			messageSourceBuilder.filter(filterChain);
 
-			flowBuilder = FileUtils.enhanceFlowForReadingMode(
-					IntegrationFlows.from(messageSourceBuilder, consumerSpec()), fileConsumerProperties);
+			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec());
+
+			if (fileConsumerProperties.getMode() != FileReadingMode.ref) {
+				flowBuilder = FileUtils.enhanceFlowForReadingMode(flowBuilder, fileConsumerProperties);
+			}
 		}
 
 		return flowBuilder

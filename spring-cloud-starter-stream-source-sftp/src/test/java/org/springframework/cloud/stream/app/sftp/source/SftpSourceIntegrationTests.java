@@ -128,6 +128,40 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	}
 
+	@TestPropertySource(properties = { "file.consumer.mode = ref",
+			"spring.cloud.stream.bindings.output.contentType=text/plain" })
+	public static class RefTestsTextOutputContentType extends SftpSourceIntegrationTests {
+
+		@Test
+		@SuppressWarnings("unchecked")
+		public void sourceFilesAsRef() throws Exception {
+			assertNull(this.streamingSource);
+			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
+					"source.synchronizer.filter.fileFilters", Set.class).iterator().next(), "pattern").toString());
+			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
+			for (int i = 1; i <= 2; i++) {
+				Message<?> received = messages.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), instanceOf(String.class));
+				assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE), equalTo(MimeTypeUtils.TEXT_PLAIN));
+				assertThat(received.getPayload(),
+						equalTo(config.getLocalDir() + File.separator + "sftpSource" + i + ".txt"));
+			}
+			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
+
+			File file = new File(getSourceRemoteDirectory(), prefix() + "Source1.txt");
+			file.setLastModified(System.currentTimeMillis() - 1_000_000);
+
+			Message<?> received = messages.poll(10, TimeUnit.SECONDS);
+			assertNotNull(received);
+			assertThat(received.getPayload(), instanceOf(String.class));
+			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE), equalTo(MimeTypeUtils.TEXT_PLAIN));
+			assertThat(received.getPayload(),
+					equalTo(config.getLocalDir() + File.separator + "sftpSource1.txt"));
+		}
+
+	}
+
 	@TestPropertySource(properties = { "sftp.stream = true",
 			"file.consumer.mode = contents",
 			"sftp.delete-remote-files = true" })
