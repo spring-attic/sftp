@@ -25,11 +25,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.hamcrest.Matchers;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -238,6 +241,105 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 				assertNotNull("Payload is null", received.getPayload());
 				String filename = received.getPayload();
 				assertEquals("Unexpected payload value", "sftpSource/sftpSource" + i + ".txt", filename);
+			}
+		}
+
+	}
+
+	@TestPropertySource(properties = {"file.consumer.mode = ref",
+			"sftp.multi-source = true",
+			"sftp.factories.one.host=localhost",
+			"sftp.factories.one.port=${sftp.factory.port}",
+			"sftp.factories.one.username = user",
+			"sftp.factories.one.password = pass",
+			"sftp.factories.one.cache-sessions = true",
+			"sftp.factories.one.allowUnknownKeys = true",
+			"sftp.factories.two.host=localhost",
+			"sftp.factories.two.port=${sftp.factory.port}",
+			"sftp.factories.two.username = user",
+			"sftp.factories.two.password = pass",
+			"sftp.factories.two.cache-sessions = true",
+			"sftp.factories.two.allowUnknownKeys = true",
+			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
+			"sftp.max-fetch=3", // TODO fix SI to not include . and .. and sub dirs in fetch count
+			"sftp.fair=true"
+	})
+	public static class MultiSourceRefTests extends SftpSourceIntegrationTests {
+
+		@BeforeClass
+		public static void setup() throws Exception {
+			File secondFolder = remoteTemporaryFolder.newFolder("sftpSecondSource");
+			File file = new File(secondFolder, "sftpSource3.txt");
+			FileOutputStream fos = new FileOutputStream(file);
+			fos.write("source3".getBytes());
+			fos.close();
+		}
+
+		@Test
+		public void sourceFilesAsRef() throws Exception {
+			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
+			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch effectively 1
+			for (int i = 1; i <= 3; i++) {
+				Message<?> received = messages.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), instanceOf(String.class));
+				File payload = objectMapper.readValue((String) received.getPayload(), File.class);
+
+				assertThat(payload,
+						equalTo(new File(config.getLocalDir() + File.separator + "sftpSource" +
+									expectedOrder[i] + ".txt")));
+			}
+			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
+		}
+
+	}
+
+	@TestPropertySource(properties = { "sftp.stream = true",
+			"file.consumer.mode = contents",
+			"sftp.multi-source = true",
+			"sftp.factories.one.host=localhost",
+			"sftp.factories.one.port=${sftp.factory.port}",
+			"sftp.factories.one.username = user",
+			"sftp.factories.one.password = pass",
+			"sftp.factories.one.cache-sessions = true",
+			"sftp.factories.one.allowUnknownKeys = true",
+			"sftp.factories.two.host=localhost",
+			"sftp.factories.two.port=${sftp.factory.port}",
+			"sftp.factories.two.username = user",
+			"sftp.factories.two.password = pass",
+			"sftp.factories.two.cache-sessions = true",
+			"sftp.factories.two.allowUnknownKeys = true",
+			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
+			"sftp.max-fetch=3", // TODO fix SI to not include . and .. and sub dirs in fetch count
+			"sftp.fair=true"
+		})
+	public static class MultiSourceStreamTests extends SftpSourceIntegrationTests {
+
+		@BeforeClass
+		public static void setup() throws Exception {
+			File secondFolder = remoteTemporaryFolder.newFolder("sftpSecondSource");
+			File file = new File(secondFolder, "sftpSource3.txt");
+			FileOutputStream fos = new FileOutputStream(file);
+			fos.write("source3".getBytes());
+			fos.close();
+		}
+
+		@Test
+		public void streamSourceFilesAsContents() throws InterruptedException {
+			assertEquals(1,
+					TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size());
+			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch effectively 1
+			for (int i = 1; i <= 3; i++) {
+				@SuppressWarnings("unchecked")
+				Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
+				assertNotNull((i - 1) + " files were received, expected 3", received);
+				System.out.println(received);
+				assertThat(new String(received.getPayload()), equalTo("source" + expectedOrder[i]));
+			}
+			int n = 0;
+			while (n++ < 100 && getSourceRemoteDirectory().list().length > 0) {
+				Thread.sleep(100);
 			}
 		}
 

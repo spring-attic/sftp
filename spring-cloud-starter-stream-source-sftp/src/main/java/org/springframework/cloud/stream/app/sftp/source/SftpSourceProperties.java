@@ -16,6 +16,9 @@
 package org.springframework.cloud.stream.app.sftp.source;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.validation.constraints.AssertFalse;
@@ -27,6 +30,8 @@ import org.hibernate.validator.constraints.Range;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.expression.Expression;
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyDirectory;
+import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -104,6 +109,32 @@ public class SftpSourceProperties {
 	 * Set to create output suitable for a task launch request. Default is `NONE`
 	 */
 	private TaskLaunchRequestType taskLauncherOutput = TaskLaunchRequestType.NONE;
+
+	/**
+	 * The maximum number of remote files to fetch per poll; default unlimited.
+	 * Does not apply when listing files or building task launch requests.
+	 */
+	private Integer maxFetch;
+
+	/**
+	 * True to allow polling multiple servers/directories.
+	 */
+	private boolean multiSource;
+
+	/**
+	 * True for fair polling of multiple servers/directories.
+	 */
+	private boolean fair;
+
+	/**
+	 * A map of factory names to factories.
+	 */
+	private Map<String, Factory> factories;
+
+	/**
+	 * A list of factory "name.directory" pairs.
+	 */
+	private String[] directories;
 
 	@NotBlank
 	public String getRemoteDir() {
@@ -219,6 +250,57 @@ public class SftpSourceProperties {
 		this.listOnly = listOnly;
 	}
 
+	public Integer getMaxFetch() {
+		return this.maxFetch;
+	}
+
+	public void setMaxFetch(Integer maxFetch) {
+		this.maxFetch = maxFetch;
+	}
+
+	public boolean isMultiSource() {
+		return this.multiSource;
+	}
+
+	public void setMultiSource(boolean multiSource) {
+		this.multiSource = multiSource;
+	}
+
+	public boolean isFair() {
+		return this.fair;
+	}
+
+	public void setFair(boolean fair) {
+		this.fair = fair;
+	}
+
+	public Map<String, Factory> getFactories() {
+		return this.factories;
+	}
+
+	public void setFactories(Map<String, Factory> factories) {
+		this.factories = factories;
+	}
+
+	public String[] getDirectories() {
+		return this.directories;
+	}
+
+	public void setDirectories(String[] directories) {
+		this.directories = directories;
+	}
+
+	public static List<KeyDirectory> keyDirectories(SftpSourceProperties properties) {
+		List<KeyDirectory> keyDirs = new ArrayList<>();
+		Assert.isTrue(properties.getDirectories().length > 0, "At least one key.directory required");
+		for (String keyDir : properties.getDirectories()) {
+			String[] split = keyDir.split("\\.");
+			Assert.isTrue(split.length == 2, () -> "key/directory can only have one '.': " + keyDir);
+			keyDirs.add(new KeyDirectory(split[0], split[1]));
+		}
+		return keyDirs;
+	}
+
 	public static class Factory {
 
 		/**
@@ -266,7 +348,6 @@ public class SftpSourceProperties {
 		 * A SpEL expression resolving to the location of the known hosts file.
 		 */
 		private Expression knownHostsExpression = null;
-
 
 		@NotBlank
 		public String getHost() {
