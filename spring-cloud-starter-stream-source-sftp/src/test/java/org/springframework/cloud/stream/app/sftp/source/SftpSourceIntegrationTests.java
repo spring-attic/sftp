@@ -261,7 +261,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			"sftp.factories.two.cache-sessions = true",
 			"sftp.factories.two.allowUnknownKeys = true",
 			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
-			"sftp.max-fetch=3", // TODO fix SI to not include . and .. and sub dirs in fetch count
+			"sftp.max-fetch=1",
 			"sftp.fair=true"
 	})
 	public static class MultiSourceRefTests extends SftpSourceIntegrationTests {
@@ -278,7 +278,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		@Test
 		public void sourceFilesAsRef() throws Exception {
 			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
-			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch effectively 1
+			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch 1
 			for (int i = 1; i <= 3; i++) {
 				Message<?> received = messages.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
@@ -310,7 +310,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			"sftp.factories.two.cache-sessions = true",
 			"sftp.factories.two.allowUnknownKeys = true",
 			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
-			"sftp.max-fetch=3", // TODO fix SI to not include . and .. and sub dirs in fetch count
+			"sftp.max-fetch=1",
 			"sftp.fair=true"
 		})
 	public static class MultiSourceStreamTests extends SftpSourceIntegrationTests {
@@ -328,7 +328,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		public void streamSourceFilesAsContents() throws InterruptedException {
 			assertEquals(1,
 					TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size());
-			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch effectively 1
+			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch 1
 			for (int i = 1; i <= 3; i++) {
 				@SuppressWarnings("unchecked")
 				Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(sftpSource.output())
