@@ -117,11 +117,6 @@ public class SftpSourceProperties {
 	private Integer maxFetch;
 
 	/**
-	 * True to allow polling multiple servers/directories.
-	 */
-	private boolean multiSource;
-
-	/**
 	 * True for fair polling of multiple servers/directories.
 	 */
 	private boolean fair;
@@ -259,11 +254,7 @@ public class SftpSourceProperties {
 	}
 
 	public boolean isMultiSource() {
-		return this.multiSource;
-	}
-
-	public void setMultiSource(boolean multiSource) {
-		this.multiSource = multiSource;
+		return this.directories != null && this.directories.length > 0;
 	}
 
 	public boolean isFair() {

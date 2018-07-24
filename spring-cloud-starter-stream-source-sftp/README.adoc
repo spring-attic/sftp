@@ -138,7 +138,6 @@ $$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File
 $$sftp.max-fetch$$:: $$The maximum number of remote files to fetch per poll; default unlimited.
  Does not apply when listing files or building task launch requests.$$ *($$Integer$$, default: `$$<none>$$`)*
 $$sftp.metadata.redis.key-name$$:: $$The key name to use when storing file metadata. Defaults to "sftpSource".$$ *($$String$$, default: `$$sftpSource$$`)*
-$$sftp.multi-source$$:: $$True to allow polling multiple servers/directories.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*

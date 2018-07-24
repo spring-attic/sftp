@@ -22,7 +22,6 @@ import java.util.Map;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.Factory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.context.IntegrationContextUtils;
@@ -49,17 +48,19 @@ public class SftpSourceSessionFactoryConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("sftp.multi-source")
 	public DelegatingFactoryWrapper delegatingFactoryWrapper(SftpSourceProperties properties,
 			SessionFactory<LsEntry> defaultFactory, BeanFactory beanFactory) {
-		return new DelegatingFactoryWrapper(properties, defaultFactory, beanFactory);
+		return properties.isMultiSource()
+				? new DelegatingFactoryWrapper(properties, defaultFactory, beanFactory)
+				: null;
 	}
 
 	@Bean
-	@ConditionalOnProperty("sftp.multi-source")
 	public RotatingServerAdvice rotatingAdvice(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
-		return new RotatingServerAdvice(factory.getFactory(), SftpSourceProperties.keyDirectories(properties),
-				properties.isFair());
+		return properties.isMultiSource()
+				? new RotatingServerAdvice(factory.getFactory(), SftpSourceProperties.keyDirectories(properties),
+						properties.isFair())
+				: null;
 	}
 
 	static SessionFactory<LsEntry> buildFactory(BeanFactory beanFactory, Factory factory) {
@@ -82,38 +83,38 @@ public class SftpSourceSessionFactoryConfiguration {
 		}
 	}
 
+	final static class DelegatingFactoryWrapper implements DisposableBean {
+
+		private final DelegatingSessionFactory<LsEntry> delegatingSessionFactory;
+
+		private final Map<Object, SessionFactory<LsEntry>> factories = new HashMap<>();
+
+		DelegatingFactoryWrapper(SftpSourceProperties properties, SessionFactory<LsEntry> defaultFactory,
+				BeanFactory beanFactory) {
+			properties.getFactories().forEach((key, factory) -> {
+				this.factories.put(key, SftpSourceSessionFactoryConfiguration.buildFactory(beanFactory, factory));
+			});
+			this.delegatingSessionFactory = new DelegatingSessionFactory<>(this.factories, defaultFactory);
+		}
+
+		public DelegatingSessionFactory<LsEntry> getFactory() {
+			return this.delegatingSessionFactory;
+		}
+
+		@Override
+		public void destroy() throws Exception {
+			this.factories.values().forEach(f -> {
+				if (f instanceof DisposableBean) {
+					try {
+						((DisposableBean) f).destroy();
+					}
+					catch (Exception e) {
+						// empty
+					}
+				}
+			});
+		}
+
+	}
 }
 
-class DelegatingFactoryWrapper implements DisposableBean {
-
-	private final DelegatingSessionFactory<LsEntry> delegatingSessionFactory;
-
-	private final Map<Object, SessionFactory<LsEntry>> factories = new HashMap<>();
-
-	public DelegatingFactoryWrapper(SftpSourceProperties properties, SessionFactory<LsEntry> defaultFactory,
-			BeanFactory beanFactory) {
-		properties.getFactories().forEach((key, factory) -> {
-			this.factories.put(key, SftpSourceSessionFactoryConfiguration.buildFactory(beanFactory, factory));
-		});
-		this.delegatingSessionFactory = new DelegatingSessionFactory<>(this.factories, defaultFactory);
-	}
-
-	public DelegatingSessionFactory<LsEntry> getFactory() {
-		return this.delegatingSessionFactory;
-	}
-
-	@Override
-	public void destroy() throws Exception {
-		this.factories.values().forEach(f -> {
-			if (f instanceof DisposableBean) {
-				try {
-					((DisposableBean) f).destroy();
-				}
-				catch (Exception e) {
-					// empty
-				}
-			}
-		});
-	}
-
-}

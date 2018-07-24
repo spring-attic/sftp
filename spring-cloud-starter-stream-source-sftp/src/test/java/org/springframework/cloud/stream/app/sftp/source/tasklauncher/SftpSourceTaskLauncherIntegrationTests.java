@@ -79,7 +79,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 		@Test
 		public void pollAndAssertFiles() throws Exception {
 			for (int i = 1; i <= 2; i++) {
-				@SuppressWarnings("unchecked") Message<?> received = this.messageCollector.forChannel(
+				Message<?> received = this.messageCollector.forChannel(
 					this.sftpSource.output()).poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);
@@ -147,7 +147,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 		public void outputIsCorrect() throws Exception {
 
 			for (int i = 1; i <= 2; i++) {
-				@SuppressWarnings("unchecked") Message<?> received = this.messageCollector.forChannel(
+				Message<?> received = this.messageCollector.forChannel(
 					this.sftpSource.output()).poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);
@@ -177,7 +177,6 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 			"sftp.factory.username = user",
 			"sftp.factory.password = pass",
 			"sftp.metadata.redis.keyName = sftpSourceTest",
-			"sftp.multi-source = true",
 			"sftp.factories.one.host=localhost",
 			"sftp.factories.one.port=${sftp.factory.port}",
 			"sftp.factories.one.username = user",
@@ -207,7 +206,6 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 		@Test
 		public void pollAndAssertFiles() throws Exception {
 			for (int i = 1; i <= 3; i++) {
-				@SuppressWarnings("unchecked")
 				Message<?> received = this.messageCollector.forChannel(this.sftpSource.output()).poll(10, TimeUnit.SECONDS);
 
 				assertNotNull((i - 1) + " files were received, expected 3", received);

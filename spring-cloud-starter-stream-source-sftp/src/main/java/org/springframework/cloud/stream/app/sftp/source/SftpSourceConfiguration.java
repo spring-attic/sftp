@@ -15,21 +15,14 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.aopalliance.aop.Advice;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -39,8 +32,8 @@ import org.springframework.cloud.stream.app.file.FileConsumerProperties;
 import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.Factory;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.TaskLaunchRequestType;
+import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
@@ -50,20 +43,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.aop.AbstractMessageSourceAdvice;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.SourcePollingChannelAdapterSpec;
-import org.springframework.integration.expression.FunctionExpression;
 import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.file.filters.ChainFileListFilter;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyDirectory;
 import org.springframework.integration.file.remote.gateway.AbstractRemoteFileOutboundGateway;
-import org.springframework.integration.file.remote.session.DelegatingSessionFactory;
 import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.scheduling.PollerMetadata;
@@ -299,106 +287,10 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty("sftp.multi-source")
-	public ListFilesRotator rotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
-		return new ListFilesRotator(properties, factory);
-	}
-
-}
-
-class ListFilesRotator extends AbstractMessageSourceAdvice {
-
-	private static final Log logger = LogFactory.getLog(ListFilesRotator.class);
-
-	private final SftpSourceProperties properties;
-
-	private final DelegatingSessionFactory<?> sessionFactory;
-
-	private final List<KeyDirectory> keyDirs = new ArrayList<>();
-
-	private final boolean fair;
-
-	private volatile boolean initialized;
-
-	private volatile Iterator<KeyDirectory> iterator;
-
-	private volatile KeyDirectory current;
-
-	@Autowired
-	ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
-		this.properties = properties;
-		this.sessionFactory = factory.getFactory();
-		if (properties.isMultiSource()) {
-			this.keyDirs.addAll(SftpSourceProperties.keyDirectories(properties));
-		}
-		this.fair = properties.isFair();
-		this.iterator = this.keyDirs.iterator();
-	}
-
-	public Map<String, Object> headers() {
-		Supplier<Factory> factory = () -> {
-			Factory selected = this.properties.getFactories().get(this.current.getKey());
-			if (selected == null) {
-				// missing key used default factory
-				selected = this.properties.getFactory();
-			}
-			return selected;
-		};
-		Map<String, Object> map = new HashMap<>();
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_SELECTED_SERVER_PROPERTY_KEY,
-				new FunctionExpression<>(m -> this.current.getKey()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_HOST_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getHost()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_PORT_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getPort()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_USERNAME_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getUsername()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_PASSWORD_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getPassword()));
-		return map;
-	}
-
-	public String getCurrentDirectory() {
-		return current.getDirectory();
-	}
-
-	@Override
-	public boolean beforeReceive(MessageSource<?> source) {
-		if (this.fair || !this.initialized) {
-			rotate();
-			this.initialized = true;
-		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("Next poll is for " + this.current);
-		}
-		this.sessionFactory.setThreadKey(this.current.getKey());
-		return true;
-	}
-
-	@Override
-	public Message<?> afterReceive(Message<?> result, MessageSource<?> source) {
-		return result;
-	}
-
-	public Message<?> clearKey(Message<List<?>> message) {
-		this.sessionFactory.clearThreadKey();
-		boolean noFilesReceived = message.getPayload().size() == 0;
-		if (logger.isTraceEnabled()) {
-			logger.trace("Poll produced "
-					+ (noFilesReceived ? "no" : "")
-					+ " files");
-		}
-		if (!this.fair && noFilesReceived) {
-			rotate();
-		}
-		return message;
-	}
-
-	private void rotate() {
-		if (!this.iterator.hasNext()) {
-			this.iterator = this.keyDirs.iterator();
-		}
-		this.current = this.iterator.next();
+	public ListFilesRotator rotator(SftpSourceProperties properties, ObjectProvider<DelegatingFactoryWrapper> factory) {
+		return properties.isMultiSource()
+			? new ListFilesRotator(properties, factory.getIfUnique())
+			: null;
 	}
 
 }

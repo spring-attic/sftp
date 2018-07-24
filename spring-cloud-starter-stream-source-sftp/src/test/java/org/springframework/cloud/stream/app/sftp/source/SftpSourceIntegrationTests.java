@@ -15,6 +15,7 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -27,6 +28,7 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -39,10 +41,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.hazelcast.metadata.HazelcastMetadataStore;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
@@ -99,7 +103,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		private ConcurrentMetadataStore metadataStore;
 
 		@Test
-		@SuppressWarnings("unchecked")
 		public void sourceFilesAsRef() throws Exception {
 			assertNull(this.streamingSource);
 			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
@@ -139,7 +142,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	public static class RefTestsTextOutputContentType extends SftpSourceIntegrationTests {
 
 		@Test
-		@SuppressWarnings("unchecked")
 		public void sourceFilesAsRef() throws Exception {
 			assertNull(this.streamingSource);
 			assertEquals(".*", TestUtils.getPropertyValue(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter,
@@ -247,7 +249,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	}
 
 	@TestPropertySource(properties = {"file.consumer.mode = ref",
-			"sftp.multi-source = true",
 			"sftp.factories.one.host=localhost",
 			"sftp.factories.one.port=${sftp.factory.port}",
 			"sftp.factories.one.username = user",
@@ -266,6 +267,9 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	})
 	public static class MultiSourceRefTests extends SftpSourceIntegrationTests {
 
+		@Autowired
+		private DelegatingFactoryWrapper factory;
+
 		@BeforeClass
 		public static void setup() throws Exception {
 			File secondFolder = remoteTemporaryFolder.newFolder("sftpSecondSource");
@@ -277,6 +281,15 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 		@Test
 		public void sourceFilesAsRef() throws Exception {
+			assertThat(
+					TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class).size())
+							.isEqualTo(2);
+			assertThat(TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.defaultFactory"))
+					.isNotNull();
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size())
+				.isEqualTo(1);
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).get(0))
+				.isInstanceOf(RotatingServerAdvice.class);
 			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
 			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch 1
 			for (int i = 1; i <= 3; i++) {
@@ -294,9 +307,53 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	}
 
+	@TestPropertySource(properties = {"file.consumer.mode = ref",
+			"sftp.factories.one.host=localhost",
+			"sftp.factories.one.port=${sftp.factory.port}",
+			"sftp.factories.one.username = user",
+			"sftp.factories.one.password = pass",
+			"sftp.factories.one.cache-sessions = true",
+			"sftp.factories.one.allowUnknownKeys = true",
+			"sftp.factories.two.host=localhost",
+			"sftp.factories.two.port=${sftp.factory.port}",
+			"sftp.factories.two.username = user",
+			"sftp.factories.two.password = pass",
+			"sftp.factories.two.cache-sessions = true",
+			"sftp.factories.two.allowUnknownKeys = true",
+			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
+			"sftp.list-only=true"
+	})
+	public static class MultiSourceListTests extends SftpSourceIntegrationTests {
+
+		@Autowired
+		private DelegatingFactoryWrapper factory;
+
+		@BeforeClass
+		public static void setup() throws Exception {
+			File secondFolder = remoteTemporaryFolder.newFolder("sftpSecondSource");
+			File file = new File(secondFolder, "sftpSource3.txt");
+			FileOutputStream fos = new FileOutputStream(file);
+			fos.write("source3".getBytes());
+			fos.close();
+		}
+
+		@Test
+		public void sourceFilesAsRef() throws Exception {
+			assertThat(
+					TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class).size())
+							.isEqualTo(2);
+			assertThat(TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.defaultFactory"))
+					.isNotNull();
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size())
+				.isEqualTo(1);
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).get(0))
+				.isInstanceOf(ListFilesRotator.class);
+		}
+
+	}
+
 	@TestPropertySource(properties = { "sftp.stream = true",
 			"file.consumer.mode = contents",
-			"sftp.multi-source = true",
 			"sftp.factories.one.host=localhost",
 			"sftp.factories.one.port=${sftp.factory.port}",
 			"sftp.factories.one.username = user",
