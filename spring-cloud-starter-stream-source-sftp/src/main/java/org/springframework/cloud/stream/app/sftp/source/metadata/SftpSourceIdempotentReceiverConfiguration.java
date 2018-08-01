@@ -19,51 +19,29 @@ package org.springframework.cloud.stream.app.sftp.source.metadata;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.channel.NullChannel;
+import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.handler.ExpressionEvaluatingMessageProcessor;
 import org.springframework.integration.handler.advice.IdempotentReceiverInterceptor;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
-import org.springframework.integration.redis.metadata.RedisMetadataStore;
 import org.springframework.integration.selector.MetadataStoreSelector;
 
 /**
  * @author Chris Schaefer
+ * @author Artem Bilan
  */
-@EnableConfigurationProperties({ SftpSourceRedisIdempotentReceiverProperties.class, RedisProperties.class })
-public class SftpSourceRedisIdempotentReceiverConfiguration {
-
-	protected static final String REMOTE_DIRECTORY_MESSAGE_HEADER = "file_remoteDirectory";
+public class SftpSourceIdempotentReceiverConfiguration {
 
 	@Autowired
 	private BeanFactory beanFactory;
 
 	@Bean
 	@ConditionalOnMissingBean
-	public ConcurrentMetadataStore metadataStore(RedisConnectionFactory redisConnectionFactory,
-			SftpSourceRedisIdempotentReceiverProperties sftpSourceRedisIdempotentReceiverProperties) {
-
-		return new RedisMetadataStore(redisConnectionFactory, sftpSourceRedisIdempotentReceiverProperties.getKeyName());
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
 	public IdempotentReceiverInterceptor idempotentReceiverInterceptor(ConcurrentMetadataStore metadataStore) {
-		String expressionStatement = new StringBuilder()
-				.append("headers['")
-				.append(REMOTE_DIRECTORY_MESSAGE_HEADER)
-				.append("'].concat(payload)")
-				.toString();
-
-		Expression expression = new SpelExpressionParser().parseExpression(expressionStatement);
-
 		ExpressionEvaluatingMessageProcessor<String> idempotentKeyStrategy =
-				new ExpressionEvaluatingMessageProcessor<>(expression);
+				new ExpressionEvaluatingMessageProcessor<>(
+						"headers['" + FileHeaders.REMOTE_DIRECTORY + "'].concat(payload)");
 		idempotentKeyStrategy.setBeanFactory(this.beanFactory);
 
 		IdempotentReceiverInterceptor idempotentReceiverInterceptor =

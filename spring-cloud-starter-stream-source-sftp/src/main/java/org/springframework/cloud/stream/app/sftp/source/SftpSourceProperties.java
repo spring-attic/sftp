@@ -66,7 +66,7 @@ public class SftpSourceProperties {
 	/**
 	 * The local directory to use for file transfers.
 	 */
-	private File localDir = new File(System.getProperty("java.io.tmpdir") + "/xd/ftp");
+	private File localDir = new File(System.getProperty("java.io.tmpdir"), "sftp-source");
 
 	/**
 	 * Set to true to create the local directory if it does not exist.

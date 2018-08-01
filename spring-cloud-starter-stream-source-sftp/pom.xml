@@ -19,12 +19,8 @@
 			<artifactId>spring-integration-sftp</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-redis</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-redis</artifactId>
+			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>app-starters-metadata-store-common</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
@@ -49,6 +45,12 @@
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
 			<artifactId>sftp-app-starters-test-support</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-hazelcast</artifactId>
+			<version>1.0.0.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

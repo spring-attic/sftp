@@ -17,6 +17,8 @@ The payload of these 2 additional marker messages is of type `FileSplitter.FileM
 
 When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
 
+See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
+
 == Input
 
 N/A (Fetches files from an SFTP server).
@@ -106,7 +108,6 @@ $$sftp.filename-pattern$$:: $$A filter pattern to match the names of files to tr
 $$sftp.filename-regex$$:: $$A filter regex pattern to match the names of files to transfer.$$ *($$Pattern$$, default: `$$<none>$$`)*
 $$sftp.list-only$$:: $$Set to true to return file metadata without the entire payload.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
-$$sftp.metadata.redis.key-name$$:: $$The key name to use when storing file metadata. Defaults to "sftpSource".$$ *($$String$$, default: `$$sftpSource$$`)*
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*

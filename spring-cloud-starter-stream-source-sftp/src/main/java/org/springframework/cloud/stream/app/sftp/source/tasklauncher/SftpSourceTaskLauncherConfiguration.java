@@ -27,7 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.source.batch.SftpSourceBatchProperties;
-import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceRedisIdempotentReceiverConfiguration;
+import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
 import org.springframework.context.annotation.Import;
@@ -45,7 +45,7 @@ import org.springframework.util.StringUtils;
  * @author Chris Schaefer
  */
 @EnableConfigurationProperties({ SftpSourceProperties.class, SftpSourceBatchProperties.class })
-@Import({ SftpSourceRedisIdempotentReceiverConfiguration.class })
+@Import({ SftpSourceIdempotentReceiverConfiguration.class })
 public class SftpSourceTaskLauncherConfiguration {
 
 	protected static final String SFTP_HOST_PROPERTY_KEY = "sftp_host";
@@ -75,8 +75,9 @@ public class SftpSourceTaskLauncherConfiguration {
 	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public Message sftpFileTaskLauncherTransformer(Message message) {
-		TaskLaunchRequest outboundPayload = new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(), getCommandLineArgs(message),
-				getEnvironmentProperties(), getDeploymentProperties(), null);
+		TaskLaunchRequest outboundPayload =
+				new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(), getCommandLineArgs(message),
+						getEnvironmentProperties(), getDeploymentProperties(), null);
 		return MessageBuilder.withPayload(outboundPayload).copyHeaders(message.getHeaders())
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 	}

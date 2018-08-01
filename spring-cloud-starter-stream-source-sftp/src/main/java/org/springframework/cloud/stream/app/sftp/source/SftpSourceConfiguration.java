@@ -30,7 +30,7 @@ import org.springframework.cloud.stream.app.file.FileConsumerProperties;
 import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
-import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceRedisIdempotentReceiverConfiguration;
+import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
@@ -48,6 +48,7 @@ import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.file.filters.ChainFileListFilter;
 import org.springframework.integration.file.remote.gateway.AbstractRemoteFileOutboundGateway;
 import org.springframework.integration.file.remote.session.SessionFactory;
+import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.metadata.SimpleMetadataStore;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.sftp.dsl.Sftp;
@@ -81,7 +82,7 @@ import org.springframework.util.StringUtils;
 @Import({ TriggerConfiguration.class,
 		SftpSourceSessionFactoryConfiguration.class,
 		TriggerPropertiesMaxMessagesDefaultUnlimited.class,
-		SftpSourceRedisIdempotentReceiverConfiguration.class,
+		SftpSourceIdempotentReceiverConfiguration.class,
 		SftpSourceTaskLauncherConfiguration.class })
 public class SftpSourceConfiguration {
 
@@ -97,6 +98,9 @@ public class SftpSourceConfiguration {
 
 	@Autowired
 	private SftpSourceProperties properties;
+	@Autowired
+
+	private ConcurrentMetadataStore metadataStore;
 
 	@Bean
 	public MessageChannel sftpFileListChannel() {
@@ -118,7 +122,7 @@ public class SftpSourceConfiguration {
 		else if (properties.getFilenameRegex() != null) {
 			filterChain.addFilter(new SftpRegexPatternFileListFilter(properties.getFilenameRegex()));
 		}
-		filterChain.addFilter(new SftpPersistentAcceptOnceFileListFilter(new SimpleMetadataStore(), "sftpSource"));
+		filterChain.addFilter(new SftpPersistentAcceptOnceFileListFilter(metadataStore, "sftpSource/"));
 
 		IntegrationFlowBuilder flowBuilder;
 

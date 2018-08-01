@@ -23,27 +23,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
+import org.springframework.integration.hazelcast.metadata.HazelcastMetadataStore;
+import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
@@ -89,13 +87,13 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	@Autowired
 	Source sftpSource;
 
-	@Autowired
-	RedisTemplate<String, String> redisTemplate;
-
 	protected final ObjectMapper objectMapper = new ObjectMapper();
 
 	@TestPropertySource(properties = "file.consumer.mode = ref")
 	public static class RefTests extends SftpSourceIntegrationTests {
+
+		@Autowired
+		private ConcurrentMetadataStore metadataStore;
 
 		@Test
 		@SuppressWarnings("unchecked")
@@ -124,6 +122,11 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			File payload = objectMapper.readValue((String) received.getPayload(), File.class);
 			assertThat(payload,
 					equalTo(new File(config.getLocalDir() + File.separator + "sftpSource1.txt")));
+
+			assertThat(this.metadataStore, Matchers.instanceOf(HazelcastMetadataStore.class));
+
+			assertNotNull(this.metadataStore.get("sftpSource/sftpSource1.txt"));
+			assertNotNull(this.metadataStore.get("sftpSource/sftpSource2.txt"));
 		}
 
 	}
@@ -220,17 +223,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	@TestPropertySource(properties = { "sftp.listOnly = true",
 			"sftp.factory.host = 127.0.0.1",
 			"sftp.factory.username = user",
-			"sftp.factory.password = pass",
-			"sftp.metadata.redis.keyName = sftpSourceTest" })
+			"sftp.factory.password = pass" })
 	public static class SftpListOnlyGatewayTests extends SftpSourceIntegrationTests {
-
-		@Value("${sftp.metadata.redis.keyName}")
-		private String keyName;
-
-		@After
-		public void after() {
-			redisTemplate.delete(keyName);
-		}
 
 		@Test
 		public void listFiles() throws InterruptedException {
@@ -245,20 +239,14 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 				String filename = received.getPayload();
 				assertEquals("Unexpected payload value", "sftpSource/sftpSource" + i + ".txt", filename);
 			}
-
-			String file1 = "sftpSource/sftpSource1.txt";
-			String file2 = "sftpSource/sftpSource2.txt";
-
-			Map<Object, Object> entries = redisTemplate.opsForHash().entries(keyName);
-			assertTrue("Idempotent datastore contains invalid number of entries, expected 2 and got: " + entries.size(), entries.size() == 2);
-			assertTrue("Idempotent datastore does not contain expected key: " + file1, entries.containsKey(file1));
-			assertTrue("Idempotent datastore does not contain expected key: " + file2, entries.containsKey(file2));
 		}
+
 	}
 
 	@SpringBootApplication
 	public static class SftpSourceApplication {
 
 	}
+
 }
 

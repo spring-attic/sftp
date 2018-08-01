@@ -36,7 +36,7 @@ import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.test.annotation.DirtiesContext;
@@ -61,13 +61,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSupport {
 
 	@Autowired
-	MessageCollector messageCollector;
+	protected MessageCollector messageCollector;
 
 	@Autowired
-	Source sftpSource;
+	protected Source sftpSource;
 
 	@Autowired
-	RedisTemplate<String, String> redisTemplate;
+	protected ConcurrentMetadataStore metadataStore;
 
 	@TestPropertySource(properties = {
 			"sftp.taskLauncherOutput = true",
@@ -78,30 +78,23 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 			"sftp.batch.jobParameters = jpk1=jpv1,jpk2=jpv2",
 			"sftp.factory.host = 127.0.0.1",
 			"sftp.factory.username = user",
-			"sftp.factory.password = pass",
-			"sftp.metadata.redis.keyName = sftpSourceTest"
+			"sftp.factory.password = pass"
 	})
 	public static class TaskLauncherOutputTests extends SftpSourceTaskLauncherIntegrationTests {
-
-		@Value("${sftp.metadata.redis.keyName}")
-		private String keyName;
-
-		@After
-		public void after() {
-			this.redisTemplate.delete(this.keyName);
-		}
 
 		@Test
 		public void pollAndAssertFiles() throws Exception {
 			for (int i = 1; i <= 2; i++) {
 				@SuppressWarnings("unchecked")
-				Message<?> received = this.messageCollector.forChannel(this.sftpSource.output()).poll(10, TimeUnit.SECONDS);
+				Message<?> received = this.messageCollector.forChannel(this.sftpSource.output())
+						.poll(10, TimeUnit.SECONDS);
 
 				assertNotNull("No files were received", received);
 				assertThat(received.getPayload(), instanceOf(String.class));
 
 				assertEquals(MimeTypeUtils.APPLICATION_JSON, received.getHeaders().get(MessageHeaders.CONTENT_TYPE));
-				TaskLaunchRequest taskLaunchRequest = new ObjectMapper().readValue((String) received.getPayload(), TaskLaunchRequest.class);
+				TaskLaunchRequest taskLaunchRequest = new ObjectMapper()
+						.readValue((String) received.getPayload(), TaskLaunchRequest.class);
 				assertNotNull(taskLaunchRequest);
 
 				assertEquals("Unexpected number of deployment properties", 0,
@@ -110,7 +103,8 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 				Map<String, String> environmentProperties = taskLaunchRequest.getEnvironmentProperties();
 				assertEquals("Unexpected datasource user name", "sa",
-						environmentProperties.get(SftpSourceTaskLauncherConfiguration.DATASOURCE_USERNAME_PROPERTY_KEY));
+						environmentProperties
+								.get(SftpSourceTaskLauncherConfiguration.DATASOURCE_USERNAME_PROPERTY_KEY));
 				assertEquals("Unexpected datasource url", "jdbc://host:2222/mem",
 						environmentProperties.get(SftpSourceTaskLauncherConfiguration.DATASOURCE_URL_PROPERTY_KEY));
 				assertEquals("Unexpected SFTP host", "127.0.0.1",
@@ -132,14 +126,8 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 				assertEquals("Unexpected job parameter", "jpk2=jpv2", commandlineArguments.get(3));
 			}
 
-			String file1 = "sftpSource/sftpSource1.txt";
-			String file2 = "sftpSource/sftpSource2.txt";
-
-			Map<Object, Object> entries = this.redisTemplate.opsForHash().entries(this.keyName);
-			assertTrue("Idempotent datastore contains invalid number of entries, expected 2 and got: " + entries.size(),
-					entries.size() == 2);
-			assertTrue("Idempotent datastore does not contain expected key: " + file1, entries.containsKey(file1));
-			assertTrue("Idempotent datastore does not contain expected key: " + file2, entries.containsKey(file2));
+			assertNotNull(this.metadataStore.get("sftpSource/sftpSource1.txt"));
+			assertNotNull(this.metadataStore.get("sftpSource/sftpSource2.txt"));
 		}
 
 	}
