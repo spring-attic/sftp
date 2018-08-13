@@ -67,33 +67,57 @@ None.
 
 A `java.io.File` object.
 
+=== task-launcher-output = STANDALONE
+
+==== Headers:
+
+* `Content-Type: application/json`
+* `file_remoteDirectory: <java.lang.String>`
+
+==== Payload:
+
+A https://docs.spring.io/spring-cloud-task/docs/current/apidocs/org/springframework/cloud/task/launcher/TaskLaunchRequest.html[TaskLaunchRequest] object.
+with the following set as command line arguments (also bound to job parameters for Spring Batch):
+
+* `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
+* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
+*  Any provided`task.parameters`
+
+`task.resource-uri` is required.
+`task.deployment-properties` and `task.environment-properties` are optional.
+`task.application-name` is ignored and will be generated.
+
+=== task-launcher-output = DATAFLOW
+
+==== Headers:
+
+* `Content-Type: application/json`
+* `file_remoteDirectory: <java.lang.String>`
+
+==== Payload:
+
+A DataFlow Task Launch request as JSON: `{"name":"<task.application-name>", "deploymentProps":{"key"="val",...},
+"args":[]}`
+with the following set as command line arguments (also bound to job parameters for Spring Batch):
+
+* `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
+* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
+*  Any provided`task.parameters`
+
+`task.resource-uri` is ignored (already registered in Data Flow Server).
+`task.environment-properties` is ignored (configured is Data Flow Server).
+`task.deployment-properties` is optional.
+`task.application-name` is required (the Data Flow Task Name).
+
 == Options
 
 The **$$sftp$$** $$source$$ has the following options:
 
 //tag::configuration-properties[]
-$$file.consumer.markers-json$$:: $$When 'fileMarkers == true', specify if they should be produced
- as FileSplitter.FileMarker objects or JSON.$$ *($$Boolean$$, default: `$$true$$`)*
-$$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources.
- Values are 'ref' - The File object,
- 'lines' - a message per line, or
- 'contents' - the contents as bytes.$$ *($$FileReadingMode$$, default: `$$<none>$$`, possible values: `ref`,`lines`,`contents`)*
-$$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data.
- 	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
+$$file.consumer.markers-json$$:: $$When 'fileMarkers == true', specify if they should be produced as FileSplitter.FileMarker objects or JSON.$$ *($$Boolean$$, default: `$$true$$`)*
+$$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources. Values are 'ref' - The File object, 'lines' - a message per line, or 'contents' - the contents as bytes.$$ *($$FileReadingMode$$, default: `$$<none>$$`, possible values: `ref`,`lines`,`contents`)*
+$$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data. 	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.auto-create-local-dir$$:: $$Set to true to create the local directory if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
-$$sftp.batch.batch-resource-uri$$:: $$The URI of the batch artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
-$$sftp.batch.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.batch.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
- JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
-$$sftp.batch.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
-$$sftp.batch.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the
- TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.batch.environment-properties$$:: $$Comma delimited list of environment properties to be applied to the
- TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.batch.job-parameters$$:: $$Comma separated list of optional job parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
-$$sftp.batch.local-file-path-job-parameter-name$$:: $$Value to use as the local file job parameter name. Defaults to "localFilePath".$$ *($$String$$, default: `$$localFilePath$$`)*
-$$sftp.batch.local-file-path-job-parameter-value$$:: $$The file path to use as the local file job parameter value. Defaults to "java.io.tmpdir".$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.batch.remote-file-path-job-parameter-name$$:: $$Value to use as the remote file job parameter name. Defaults to "remoteFilePath".$$ *($$String$$, default: `$$remoteFilePath$$`)*
 $$sftp.delete-remote-files$$:: $$Set to true to delete remote files after successful transfer.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
@@ -112,7 +136,18 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.task-launcher-output$$:: $$Set to true to create output suitable for a task launch request.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.task-launcher-output$$:: $$Set to create output suitable for a task launch request. Default is `NONE`$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `DATAFLOW`,`STANDALONE`,`NONE`)*
+$$sftp.task.application-name$$:: $$The task application name (required for DATAFLOW launch request).$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
+$$sftp.task.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
+$$sftp.task.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.environment-properties$$:: $$Comma delimited list of environment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.local-file-path-parameter-name$$:: $$Value to use as the local file parameter name.$$ *($$String$$, default: `$$localFilePath$$`)*
+$$sftp.task.local-file-path-parameter-value$$:: $$The file path to use as the local file parameter value. Defaults to "java.io.tmpdir".$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.parameters$$:: $$Comma separated list of optional parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
+$$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$remoteFilePath$$`)*
+$$sftp.task.resource-uri$$:: $$The URI of the task artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*

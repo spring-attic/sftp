@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source.batch;
+package org.springframework.cloud.stream.app.sftp.source.task;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,101 +35,101 @@ import org.springframework.integration.config.EnableIntegration;
 /**
  * @author Chris Schaefer
  */
-public class SftpSourceBatchPropertiesTests {
+public class SftpSourceTaskPropertiesTests {
 
 	@Test
 	public void batchUriCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.batchResourceUri:uri:/somewhere");
-		assertThat(properties.getBatchResourceUri(), equalTo("uri:/somewhere"));
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.resourceUri:uri:/somewhere");
+		assertThat(properties.getResourceUri(), equalTo("uri:/somewhere"));
 	}
 
 	@Test(expected = AssertionError.class)
 	public void batchUriIsRequired() {
-		validateRequiredProperty("sftp.batch.batchResourceUri");
+		validateRequiredProperty("sftp.task.resourceUri");
 	}
 
 	@Test
 	public void dataSourceUrlCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.dataSourceUrl:jdbc:h2:tcp://localhost/mem:df");
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.dataSourceUrl:jdbc:h2:tcp://localhost/mem:df");
 		assertThat(properties.getDataSourceUrl(), equalTo("jdbc:h2:tcp://localhost/mem:df"));
 	}
 
 	@Test(expected = AssertionError.class)
 	public void dataSourceUrlIsRequired() {
-		validateRequiredProperty("sftp.batch.dataSourceUrl");
+		validateRequiredProperty("sftp.task.dataSourceUrl");
 	}
 
 	@Test
 	public void dataSourceUsernameCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.dataSourceUserName:user");
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.dataSourceUserName:user");
 		assertThat(properties.getDataSourceUserName(), equalTo("user"));
 	}
 
 	@Test(expected = AssertionError.class)
 	public void dataSourceUsernameIsRequired() {
-		validateRequiredProperty("sftp.batch.dataSourceUserName");
+		validateRequiredProperty("sftp.task.dataSourceUserName");
 	}
 
 	@Test
 	public void dataSourcePasswordCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.dataSourcePassword:pass");
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.dataSourcePassword:pass");
 		assertThat(properties.getDataSourcePassword(), equalTo("pass"));
 	}
 
 	@Test
 	public void deploymentPropertiesCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.deploymentProperties:prop1=val1,prop2=val2");
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.deploymentProperties:prop1=val1,prop2=val2");
 		assertThat(properties.getDeploymentProperties(), equalTo("prop1=val1,prop2=val2"));
 	}
 
 	@Test
 	public void environmentPropertiesCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.environmentProperties:prop1=val1,prop2=val2");
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.environmentProperties:prop1=val1,prop2=val2");
 		assertThat(properties.getEnvironmentProperties(), equalTo("prop1=val1,prop2=val2"));
 	}
 
 	@Test
-	public void remoteFilePathJobParameterNameCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.remoteFilePathJobParameterName:externalFileName");
-		assertThat(properties.getRemoteFilePathJobParameterName(), equalTo("externalFileName"));
+	public void remoteFilePathParameterNameCanBeCustomized() {
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.remoteFilePathParameterName:externalFileName");
+		assertThat(properties.getRemoteFilePathParameterName(), equalTo("externalFileName"));
 	}
 
 	@Test
-	public void remoteFilePathJobParameterNameDefault() {
-		SftpSourceBatchProperties properties = getBatchProperties(null);
-		assertThat(properties.getRemoteFilePathJobParameterName(), equalTo(SftpSourceBatchProperties.DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME));
+	public void remoteFilePathParameterNameDefault() {
+		SftpSourceTaskProperties properties = getBatchProperties(null);
+		assertThat(properties.getRemoteFilePathParameterName(), equalTo(SftpSourceTaskProperties.DEFAULT_REMOTE_FILE_PATH_PARAM_NAME));
 	}
 
 	@Test
-	public void localFilePathJobParameterNameCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.localFilePathJobParameterName:localFileName");
-		assertThat(properties.getLocalFilePathJobParameterName(), equalTo("localFileName"));
+	public void localFilePathParameterNameCanBeCustomized() {
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.localFilePathParameterName:localFileName");
+		assertThat(properties.getLocalFilePathParameterName(), equalTo("localFileName"));
 	}
 
 	@Test
-	public void localFilePathJobParameterNameDefault() {
-		SftpSourceBatchProperties properties = getBatchProperties(null);
-		assertThat(properties.getLocalFilePathJobParameterName(), equalTo(SftpSourceBatchProperties.DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME));
+	public void localFilePathParameterNameDefault() {
+		SftpSourceTaskProperties properties = getBatchProperties(null);
+		assertThat(properties.getLocalFilePathParameterName(), equalTo(SftpSourceTaskProperties.DEFAULT_LOCAL_FILE_PATH_PARAM_NAME));
 	}
 
 	@Test
-	public void localFilePathJobParameterValueCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.localFilePathJobParameterValue:/home/files");
-		assertThat(properties.getLocalFilePathJobParameterValue(), equalTo("/home/files"));
+	public void localFilePathParameterValueCanBeCustomized() {
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.localFilePathParameterValue:/home/files");
+		assertThat(properties.getLocalFilePathParameterValue(), equalTo("/home/files"));
 	}
 
 	@Test
-	public void jobParametersCanBeCustomized() {
-		SftpSourceBatchProperties properties = getBatchProperties("sftp.batch.jobParameters:jp1=jpv1,jp2=jpv2");
-		List<String> jobParameters = properties.getJobParameters();
+	public void parametersCanBeCustomized() {
+		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.Parameters:jp1=jpv1,jp2=jpv2");
+		List<String> jobParameters = properties.getParameters();
 
-		assertNotNull("Job parameters should not be null", jobParameters);
-		assertThat("Expected two job parameters", jobParameters.size() == 2);
+		assertNotNull("Parameters should not be null", jobParameters);
+		assertThat("Expected two parameters", jobParameters.size() == 2);
 		assertThat(jobParameters.get(0), equalTo("jp1=jpv1"));
 		assertThat(jobParameters.get(1), equalTo("jp2=jpv2"));
 	}
 
-	private SftpSourceBatchProperties getBatchProperties(String var) {
+	private SftpSourceTaskProperties getBatchProperties(String var) {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
 		if (var != null) {
@@ -139,7 +139,7 @@ public class SftpSourceBatchPropertiesTests {
 		context.register(Conf.class);
 		context.refresh();
 
-		return context.getBean(SftpSourceBatchProperties.class);
+		return context.getBean(SftpSourceTaskProperties.class);
 	}
 
 	private void validateRequiredProperty(String property) {
@@ -155,7 +155,7 @@ public class SftpSourceBatchPropertiesTests {
 
 	@Configuration
 	@EnableIntegration
-	@EnableConfigurationProperties(SftpSourceBatchProperties.class)
+	@EnableConfigurationProperties(SftpSourceTaskProperties.class)
 	@Import(SpelExpressionConverterConfiguration.class)
 	static class Conf {
 

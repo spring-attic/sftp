@@ -15,12 +15,6 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
-import static org.hamcrest.CoreMatchers.endsWith;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 
 import org.junit.Test;
@@ -36,11 +30,18 @@ import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.test.util.TestUtils;
 
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * @author David Turanski
  * @author Gary Russell
  * @author Artem Bilan
  * @author Chris Schaefer
+ * @author David Turanski
  */
 public class SftpSourcePropertiesTests {
 
@@ -145,17 +146,17 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void taskLauncherOutputCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		testPropertyValues(context, "sftp.taskLauncherOutput:true");
+		testPropertyValues(context, "sftp.taskLauncherOutput:STANDALONE");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
-		assertTrue(properties.isTaskLauncherOutput());
+		assertTrue(properties.getTaskLauncherOutput() == SftpSourceProperties.TaskLaunchRequestType.STANDALONE);
 	}
 
 	@Test(expected = AssertionError.class)
 	public void onlyAllowListOnlyOrTaskLauncherOutputEnabled() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		testPropertyValues(context, "sftp.listOnly:true", "sftp.taskLauncherOutput:true");
+		testPropertyValues(context, "sftp.listOnly:true", "sftp.taskLauncherOutput:STANDALONE");
 		context.register(Conf.class);
 
 		try {
@@ -193,13 +194,13 @@ public class SftpSourcePropertiesTests {
 	public void knownHostsExpression() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 		testPropertyValues(context,
-				"sftp.factory.known-hosts-expression = @systemProperties[\"user.home\"] + \"/.ssh/known_hosts\"",
-				"sftp.factory.cache-sessions = true");
+			"sftp.factory.known-hosts-expression = @systemProperties[\"user.home\"] + \"/.ssh/known_hosts\"",
+			"sftp.factory.cache-sessions = true");
 		context.register(Factory.class);
 		context.refresh();
 		SessionFactory<?> sessionFactory = context.getBean(SessionFactory.class);
-		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "sessionFactory.knownHosts"), endsWith(
-				"/.ssh/known_hosts"));
+		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "sessionFactory.knownHosts"),
+			endsWith("/.ssh/known_hosts"));
 		context.close();
 	}
 

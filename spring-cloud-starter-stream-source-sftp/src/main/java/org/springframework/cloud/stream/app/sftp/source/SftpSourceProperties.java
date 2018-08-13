@@ -33,10 +33,12 @@ import org.springframework.validation.annotation.Validated;
  * @author Gary Russell
  * @author Artem Bilan
  * @author Chris Schaefer
+ * @author David Turanski
  */
 @ConfigurationProperties("sftp")
 @Validated
 public class SftpSourceProperties {
+	public enum TaskLaunchRequestType {DATAFLOW, STANDALONE, NONE};
 
 	/**
 	 * Session factory properties.
@@ -99,9 +101,9 @@ public class SftpSourceProperties {
 	private boolean listOnly = false;
 
 	/**
-	 * Set to true to create output suitable for a task launch request.
+	 * Set to create output suitable for a task launch request. Default is `NONE`
 	 */
-	private boolean taskLauncherOutput = false;
+	private TaskLaunchRequestType taskLauncherOutput = TaskLaunchRequestType.NONE;
 
 	@NotBlank
 	public String getRemoteDir() {
@@ -186,7 +188,7 @@ public class SftpSourceProperties {
 
 	@AssertFalse(message = "listOnly and taskLauncherOutput cannot be used at the same time")
 	public boolean isListOnlyOrTaskLauncher() {
-		return listOnly && taskLauncherOutput;
+		return listOnly && taskLauncherOutput != TaskLaunchRequestType.NONE;
 	}
 
 	public boolean isStream() {
@@ -201,11 +203,11 @@ public class SftpSourceProperties {
 		return this.factory;
 	}
 
-	public boolean isTaskLauncherOutput() {
+	public TaskLaunchRequestType getTaskLauncherOutput() {
 		return taskLauncherOutput;
 	}
 
-	public void setTaskLauncherOutput(boolean taskLauncherOutput) {
+	public void setTaskLauncherOutput(TaskLaunchRequestType taskLauncherOutput) {
 		this.taskLauncherOutput = taskLauncherOutput;
 	}
 
