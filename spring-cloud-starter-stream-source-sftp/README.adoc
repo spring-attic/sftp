@@ -81,6 +81,7 @@ $$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources.
 $$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data.
  	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.auto-create-local-dir$$:: $$Set to true to create the local directory if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
+$$sftp.batch.application-name$$:: $$The task application name (required for DATAFLOW launch request).$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.batch.batch-resource-uri$$:: $$The URI of the batch artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.batch.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.batch.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
@@ -112,7 +113,7 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.task-launcher-output$$:: $$Set to true to create output suitable for a task launch request.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.task-launcher-output$$:: $$Set to create output suitable for a task launch request. Default is `NONE`$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `DATAFLOW`,`STANDALONE`,`NONE`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*

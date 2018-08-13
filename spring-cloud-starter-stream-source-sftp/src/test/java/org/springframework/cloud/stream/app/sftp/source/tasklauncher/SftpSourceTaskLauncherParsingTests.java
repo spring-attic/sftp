@@ -22,10 +22,12 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.source.batch.SftpSourceBatchProperties;
 
 /**
  * @author Chris Schaefer
+ * @author David Turanski
  */
 public class SftpSourceTaskLauncherParsingTests {
 	@Test
@@ -33,7 +35,7 @@ public class SftpSourceTaskLauncherParsingTests {
 		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(null, sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
 
 		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value");
 
@@ -48,7 +50,7 @@ public class SftpSourceTaskLauncherParsingTests {
 		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(null, sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
 
 		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value1,value2");
 
@@ -63,7 +65,7 @@ public class SftpSourceTaskLauncherParsingTests {
 		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(null, sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
 
 		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value1,app.sftp.other.param=value2");
 
@@ -80,7 +82,7 @@ public class SftpSourceTaskLauncherParsingTests {
 		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(null, sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
 
 		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value1,value2,app.sftp.other.param=other1,other2");
 

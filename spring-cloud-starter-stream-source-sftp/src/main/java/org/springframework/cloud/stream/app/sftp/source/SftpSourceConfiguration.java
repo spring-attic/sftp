@@ -76,6 +76,7 @@ import org.springframework.util.StringUtils;
  * @author Artem Bilan
  * @author Chris Schaefer
  * @author Christian Tzolov
+ * @author David Turanski
  */
 @EnableBinding(Source.class)
 @EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class })
@@ -138,13 +139,14 @@ public class SftpSourceConfiguration {
 							properties.isDeleteRemoteFiles() ? consumerSpecWithDelete() : consumerSpec()),
 					fileConsumerProperties);
 		}
-		else if (properties.isListOnly() || properties.isTaskLauncherOutput()) {
+		else if (properties.isListOnly() || properties.getTaskLauncherOutput() != SftpSourceProperties
+			.TaskLaunchRequestType.NONE) {
 			return IntegrationFlows.from(() -> properties.getRemoteDir(), consumerSpec())
 					.handle(Sftp.outboundGateway(sftpSessionFactory,
 							AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
 							.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
 					.split()
-					.channel(properties.isListOnly() ? sftpFileListChannel() : sftpFileTaskLaunchChannel())
+					.channel(route(properties))
 					.get();
 		}
 		else {
@@ -170,6 +172,10 @@ public class SftpSourceConfiguration {
 		return flowBuilder
 				.channel(this.source.output())
 				.get();
+	}
+
+	private MessageChannel route(SftpSourceProperties properties) {
+		return properties.isListOnly() ? sftpFileListChannel() : sftpFileTaskLaunchChannel();
 	}
 
 	private Consumer<SourcePollingChannelAdapterSpec> consumerSpec() {

@@ -89,6 +89,13 @@ public class SftpSourceBatchProperties {
 	 */
 	private List<String> jobParameters = new ArrayList<>();
 
+	/**
+	 *
+	 * The task application name (required for DATAFLOW launch request).
+	 */
+	private String applicationName;
+
+
 	@NotNull
 	public String getBatchResourceUri() {
 		return this.batchResourceUri;
@@ -173,4 +180,11 @@ public class SftpSourceBatchProperties {
 		this.jobParameters = jobParameters;
 	}
 
+	public String getApplicationName() {
+		return applicationName;
+	}
+
+	public void setApplicationName(String applicationName) {
+		this.applicationName = applicationName;
+	}
 }

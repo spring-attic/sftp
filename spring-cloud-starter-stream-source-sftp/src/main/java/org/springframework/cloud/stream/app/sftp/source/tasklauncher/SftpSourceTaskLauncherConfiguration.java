@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -30,10 +32,12 @@ import org.springframework.cloud.stream.app.sftp.source.batch.SftpSourceBatchPro
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.file.FileHeaders;
+import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -43,6 +47,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Chris Schaefer
+ * @author David Turanski
  */
 @EnableConfigurationProperties({ SftpSourceProperties.class, SftpSourceBatchProperties.class })
 @Import({ SftpSourceIdempotentReceiverConfiguration.class })
@@ -66,21 +71,47 @@ public class SftpSourceTaskLauncherConfiguration {
 
 	@Autowired
 	public SftpSourceTaskLauncherConfiguration(SftpSourceProperties sftpSourceProperties,
-			SftpSourceBatchProperties sftpSourceBatchProperties) {
+		SftpSourceBatchProperties sftpSourceBatchProperties) {
 		this.sftpSourceProperties = sftpSourceProperties;
 		this.sftpSourceBatchProperties = sftpSourceBatchProperties;
+		if (sftpSourceProperties.getTaskLauncherOutput() == SftpSourceProperties.TaskLaunchRequestType.DATAFLOW) {
+			Assert.hasText(sftpSourceBatchProperties.getApplicationName(),
+				"'applicationName' is required for DataFlow Task Launcher.");
+		}
 	}
 
-	@ConditionalOnProperty(name = "sftp.taskLauncherOutput")
+	@Bean
+	@ConditionalOnProperty(name = "sftp.taskLauncherOutput", havingValue = "STANDALONE")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
-	public Message sftpFileTaskLauncherTransformer(Message message) {
-		TaskLaunchRequest outboundPayload =
-				new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(), getCommandLineArgs(message),
-						getEnvironmentProperties(), getDeploymentProperties(), null);
-		return MessageBuilder.withPayload(outboundPayload).copyHeaders(message.getHeaders())
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
+	public MessageProcessor<Message> sftpFileTaskLauncherTransformer() {
+		return message -> {
+			TaskLaunchRequest outboundPayload = new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(),
+				getCommandLineArgs(message), getEnvironmentProperties(), getDeploymentProperties(), null);
+			return MessageBuilder.withPayload(outboundPayload)
+				.copyHeaders(message.getHeaders())
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+				.build();
+		};
 	}
+
+	@Bean
+	@ConditionalOnProperty(name = "sftp.taskLauncherOutput", havingValue = "DATAFLOW")
+	@IdempotentReceiver("idempotentReceiverInterceptor")
+	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
+	public MessageProcessor<Message> dataflowTaskLauchRequestTransformer() {
+		return message -> {
+			DataFlowTaskLaunchRequest taskLaunchRequest = new DataFlowTaskLaunchRequest();
+			taskLaunchRequest.setCommandlineArguments(getCommandLineArgs(message));
+			taskLaunchRequest.setDeploymentProperties(getDeploymentProperties());
+			taskLaunchRequest.setApplicationName(sftpSourceBatchProperties.getApplicationName());
+			return MessageBuilder.withPayload(taskLaunchRequest)
+				.copyHeaders(message.getHeaders())
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+				.build();
+		};
+	}
+
 
 	private Map<String, String> getEnvironmentProperties() {
 		Map<String, String> environmentProperties = new HashMap<>();
@@ -153,6 +184,42 @@ public class SftpSourceTaskLauncherConfiguration {
 		commandLineArgs.addAll(sftpSourceBatchProperties.getJobParameters());
 
 		return commandLineArgs;
+	}
+
+	static class DataFlowTaskLaunchRequest {
+		@JsonProperty("args")
+		private List<String> commandlineArguments = new ArrayList<>();
+		@JsonProperty("deploymentProps")
+		private Map<String, String> deploymentProperties = new HashMap<>();
+		@JsonProperty("name")
+		private String applicationName;
+
+		public List<String> getCommandlineArguments() {
+			return commandlineArguments;
+		}
+
+		public void setCommandlineArguments(List<String> commandlineArguments) {
+			Assert.notNull(commandlineArguments, "'commandLineArguments' cannot be null.");
+			this.commandlineArguments = commandlineArguments;
+		}
+
+		public Map<String, String> getDeploymentProperties() {
+			return deploymentProperties;
+		}
+
+		public void setDeploymentProperties(Map<String, String> deploymentProperties) {
+			Assert.notNull(commandlineArguments, "'deploymentProperties' cannot be null.");
+			this.deploymentProperties = deploymentProperties;
+		}
+
+		public String getApplicationName() {
+			return applicationName;
+		}
+
+		public void setApplicationName(String applicationName) {
+			Assert.hasText(applicationName, "'applicationName' cannot be blank.");
+			this.applicationName = applicationName;
+		}
 	}
 
 }
