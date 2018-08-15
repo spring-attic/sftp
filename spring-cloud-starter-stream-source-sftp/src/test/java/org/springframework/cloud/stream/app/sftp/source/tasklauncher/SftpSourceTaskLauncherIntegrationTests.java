@@ -65,9 +65,9 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 	protected ConcurrentMetadataStore metadataStore;
 
 	@TestPropertySource(properties = { "sftp.taskLauncherOutput = STANDALONE",
-		"sftp.batch.batchResourceUri = file://some.jar", "sftp.batch.dataSourceUserName = sa",
-		"sftp.batch.dataSourceUrl = jdbc://host:2222/mem", "sftp.batch.localFilePathJobParameterValue = /tmp/files/",
-		"sftp.batch.jobParameters = jpk1=jpv1,jpk2=jpv2", "sftp.factory.host = 127.0.0.1",
+		"sftp.task.resourceUri = file://some.jar", "sftp.task.dataSourceUserName = sa",
+		"sftp.task.dataSourceUrl = jdbc://host:2222/mem", "sftp.task.localFilePathParameterValue = /tmp/files/",
+		"sftp.task.Parameters = jpk1=jpv1,jpk2=jpv2", "sftp.factory.host = 127.0.0.1",
 		"sftp.factory.username = user", "sftp.factory.password = pass" })
 	public static class TaskLauncherOutputTests extends SftpSourceTaskLauncherIntegrationTests {
 
@@ -87,7 +87,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 				assertEquals("Unexpected number of deployment properties", 0,
 					taskLaunchRequest.getDeploymentProperties().size());
-				assertEquals("Unexpected batch artifact URI", "file://some.jar", taskLaunchRequest.getUri());
+				assertEquals("Unexpected task artifact URI", "file://some.jar", taskLaunchRequest.getUri());
 
 				Map<String, String> environmentProperties = taskLaunchRequest.getEnvironmentProperties();
 				assertEquals("Unexpected datasource user name", "sa",
@@ -109,8 +109,8 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 					commandlineArguments.get(0));
 				assertEquals("Unexpected local file path", "localFilePath=/tmp/files/sftpSource" + i + ".txt",
 					commandlineArguments.get(1));
-				assertEquals("Unexpected job parameter", "jpk1=jpv1", commandlineArguments.get(2));
-				assertEquals("Unexpected job parameter", "jpk2=jpv2", commandlineArguments.get(3));
+				assertEquals("Unexpected  parameter", "jpk1=jpv1", commandlineArguments.get(2));
+				assertEquals("Unexpected  parameter", "jpk2=jpv2", commandlineArguments.get(3));
 			}
 
 			assertNotNull(this.metadataStore.get("sftpSource/sftpSource1.txt"));
@@ -119,7 +119,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 	}
 
-	@TestPropertySource(properties = { "sftp.taskLauncherOutput = DATAFLOW", "sftp.batch.applicationName=task",
+	@TestPropertySource(properties = { "sftp.taskLauncherOutput = DATAFLOW", "sftp.task.applicationName=task",
 		"sftp.factory.allowUnknownKeys = true", "sftp.remoteDir = sftpSource", "sftp.factory.host = 127.0.0.1",
 		"sftp.factory.username = user",
 		"sftp.factory.password = pass",

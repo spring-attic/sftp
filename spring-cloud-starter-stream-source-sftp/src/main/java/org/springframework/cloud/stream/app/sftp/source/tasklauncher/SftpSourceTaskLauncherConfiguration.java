@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
-import org.springframework.cloud.stream.app.sftp.source.batch.SftpSourceBatchProperties;
+import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
@@ -49,7 +49,7 @@ import org.springframework.util.StringUtils;
  * @author Chris Schaefer
  * @author David Turanski
  */
-@EnableConfigurationProperties({ SftpSourceProperties.class, SftpSourceBatchProperties.class })
+@EnableConfigurationProperties({ SftpSourceProperties.class, SftpSourceTaskProperties.class })
 @Import({ SftpSourceIdempotentReceiverConfiguration.class })
 public class SftpSourceTaskLauncherConfiguration {
 
@@ -67,15 +67,15 @@ public class SftpSourceTaskLauncherConfiguration {
 
 	private SftpSourceProperties sftpSourceProperties;
 
-	private SftpSourceBatchProperties sftpSourceBatchProperties;
+	private SftpSourceTaskProperties sftpSourceTaskProperties;
 
 	@Autowired
 	public SftpSourceTaskLauncherConfiguration(SftpSourceProperties sftpSourceProperties,
-		SftpSourceBatchProperties sftpSourceBatchProperties) {
+		SftpSourceTaskProperties sftpSourceTaskProperties) {
 		this.sftpSourceProperties = sftpSourceProperties;
-		this.sftpSourceBatchProperties = sftpSourceBatchProperties;
+		this.sftpSourceTaskProperties = sftpSourceTaskProperties;
 		if (sftpSourceProperties.getTaskLauncherOutput() == SftpSourceProperties.TaskLaunchRequestType.DATAFLOW) {
-			Assert.hasText(sftpSourceBatchProperties.getApplicationName(),
+			Assert.hasText(sftpSourceTaskProperties.getApplicationName(),
 				"'applicationName' is required for DataFlow Task Launcher.");
 		}
 	}
@@ -86,7 +86,7 @@ public class SftpSourceTaskLauncherConfiguration {
 	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public MessageProcessor<Message> sftpFileTaskLauncherTransformer() {
 		return message -> {
-			TaskLaunchRequest outboundPayload = new TaskLaunchRequest(sftpSourceBatchProperties.getBatchResourceUri(),
+			TaskLaunchRequest outboundPayload = new TaskLaunchRequest(sftpSourceTaskProperties.getResourceUri(),
 				getCommandLineArgs(message), getEnvironmentProperties(), getDeploymentProperties(), null);
 			return MessageBuilder.withPayload(outboundPayload)
 				.copyHeaders(message.getHeaders())
@@ -104,7 +104,7 @@ public class SftpSourceTaskLauncherConfiguration {
 			DataFlowTaskLaunchRequest taskLaunchRequest = new DataFlowTaskLaunchRequest();
 			taskLaunchRequest.setCommandlineArguments(getCommandLineArgs(message));
 			taskLaunchRequest.setDeploymentProperties(getDeploymentProperties());
-			taskLaunchRequest.setApplicationName(sftpSourceBatchProperties.getApplicationName());
+			taskLaunchRequest.setApplicationName(sftpSourceTaskProperties.getApplicationName());
 			return MessageBuilder.withPayload(taskLaunchRequest)
 				.copyHeaders(message.getHeaders())
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
@@ -115,14 +115,14 @@ public class SftpSourceTaskLauncherConfiguration {
 
 	private Map<String, String> getEnvironmentProperties() {
 		Map<String, String> environmentProperties = new HashMap<>();
-		environmentProperties.put(DATASOURCE_URL_PROPERTY_KEY, sftpSourceBatchProperties.getDataSourceUrl());
-		environmentProperties.put(DATASOURCE_USERNAME_PROPERTY_KEY, sftpSourceBatchProperties.getDataSourceUserName());
+		environmentProperties.put(DATASOURCE_URL_PROPERTY_KEY, sftpSourceTaskProperties.getDataSourceUrl());
+		environmentProperties.put(DATASOURCE_USERNAME_PROPERTY_KEY, sftpSourceTaskProperties.getDataSourceUserName());
 		environmentProperties.put(SFTP_HOST_PROPERTY_KEY, sftpSourceProperties.getFactory().getHost());
 		environmentProperties.put(SFTP_USERNAME_PROPERTY_KEY, sftpSourceProperties.getFactory().getUsername());
 		environmentProperties.put(SFTP_PASSWORD_PROPERTY_KEY, sftpSourceProperties.getFactory().getPassword());
 		environmentProperties.put(SFTP_PORT_PROPERTY_KEY, String.valueOf(sftpSourceProperties.getFactory().getPort()));
 
-		String providedProperties = sftpSourceBatchProperties.getEnvironmentProperties();
+		String providedProperties = sftpSourceTaskProperties.getEnvironmentProperties();
 
 		if (StringUtils.hasText(providedProperties)) {
 			String[] splitProperties = StringUtils.split(providedProperties, ",");
@@ -140,7 +140,7 @@ public class SftpSourceTaskLauncherConfiguration {
 		ArrayList<String> pairs = new ArrayList<>();
 		Map<String, String> deploymentProperties = new HashMap<>();
 
-		String properties = sftpSourceBatchProperties.getDeploymentProperties();
+		String properties = sftpSourceTaskProperties.getDeploymentProperties();
 		String[] candidates = StringUtils.commaDelimitedListToStringArray(properties);
 
 		for (int i = 0; i < candidates.length; i++) {
@@ -171,17 +171,17 @@ public class SftpSourceTaskLauncherConfiguration {
 
 		String filename = (String) message.getPayload();
 		String remoteDirectory = (String) message.getHeaders().get(FileHeaders.REMOTE_DIRECTORY);
-		String localFilePathJobParameterValue = sftpSourceBatchProperties.getLocalFilePathJobParameterValue();
+		String localFilePathJobParameterValue = sftpSourceTaskProperties.getLocalFilePathParameterValue();
 
 		String remoteFilePath = remoteDirectory + filename;
 		String localFilePath = localFilePathJobParameterValue + filename;
-		String localFilePathJobParameterName = sftpSourceBatchProperties.getLocalFilePathJobParameterName();
-		String remoteFilePathJobParameterName = sftpSourceBatchProperties.getRemoteFilePathJobParameterName();
+		String localFilePathJobParameterName = sftpSourceTaskProperties.getLocalFilePathParameterName();
+		String remoteFilePathJobParameterName = sftpSourceTaskProperties.getRemoteFilePathParameterName();
 
 		List<String> commandLineArgs = new ArrayList<>();
 		commandLineArgs.add(remoteFilePathJobParameterName + "=" + remoteFilePath);
 		commandLineArgs.add(localFilePathJobParameterName + "=" + localFilePath);
-		commandLineArgs.addAll(sftpSourceBatchProperties.getJobParameters());
+		commandLineArgs.addAll(sftpSourceTaskProperties.getParameters());
 
 		return commandLineArgs;
 	}

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source.batch;
+package org.springframework.cloud.stream.app.sftp.source.task;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,19 +27,20 @@ import org.springframework.validation.annotation.Validated;
 
 /**
  * @author Chris Schaefer
+ * @author David Turanski
  */
 @Validated
-@ConfigurationProperties("sftp.batch")
-public class SftpSourceBatchProperties {
+@ConfigurationProperties("sftp.task")
+public class SftpSourceTaskProperties {
 
-	protected static final String DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME = "localFilePath";
+	protected static final String DEFAULT_LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
 
-	protected static final String DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME = "remoteFilePath";
+	protected static final String DEFAULT_REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
 
 	/**
-	 * The URI of the batch artifact to be applied to the TaskLaunchRequest.
+	 * The URI of the task artifact to be applied to the TaskLaunchRequest.
 	 */
-	private String batchResourceUri = "";
+	private String resourceUri = "";
 
 	/**
 	 * The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
@@ -70,24 +71,24 @@ public class SftpSourceBatchProperties {
 	private String environmentProperties;
 
 	/**
-	 * Value to use as the remote file job parameter name. Defaults to "remoteFilePath".
+	 * Value to use as the remote file parameter name.
 	 */
-	private String remoteFilePathJobParameterName = DEFAULT_REMOTE_FILE_PATH_JOB_PARAM_NAME;
+	private String remoteFilePathParameterName = DEFAULT_REMOTE_FILE_PATH_PARAM_NAME;
 
 	/**
-	 * Value to use as the local file job parameter name. Defaults to "localFilePath".
+	 * Value to use as the local file parameter name.
 	 */
-	private String localFilePathJobParameterName = DEFAULT_LOCAL_FILE_PATH_JOB_PARAM_NAME;
+	private String localFilePathParameterName = DEFAULT_LOCAL_FILE_PATH_PARAM_NAME;
 
 	/**
-	 * The file path to use as the local file job parameter value. Defaults to "java.io.tmpdir".
+	 * The file path to use as the local file parameter value. Defaults to "java.io.tmpdir".
 	 */
-	private String localFilePathJobParameterValue = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
+	private String localFilePathParameterValue = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
 
 	/**
-	 * Comma separated list of optional job parameters in key=value format.
+	 * Comma separated list of optional parameters in key=value format.
 	 */
-	private List<String> jobParameters = new ArrayList<>();
+	private List<String> parameters = new ArrayList<>();
 
 	/**
 	 *
@@ -97,12 +98,12 @@ public class SftpSourceBatchProperties {
 
 
 	@NotNull
-	public String getBatchResourceUri() {
-		return this.batchResourceUri;
+	public String getResourceUri() {
+		return this.resourceUri;
 	}
 
-	public void setBatchResourceUri(String batchResourceUri) {
-		this.batchResourceUri = batchResourceUri;
+	public void setResourceUri(String resourceUri) {
+		this.resourceUri = resourceUri;
 	}
 
 	@NotBlank
@@ -147,37 +148,37 @@ public class SftpSourceBatchProperties {
 		this.environmentProperties = environmentProperties;
 	}
 
-	public String getRemoteFilePathJobParameterName() {
-		return this.remoteFilePathJobParameterName;
+	public String getRemoteFilePathParameterName() {
+		return this.remoteFilePathParameterName;
 	}
 
-	public void setRemoteFilePathJobParameterName(String remoteFilePathJobParameterName) {
-		this.remoteFilePathJobParameterName = remoteFilePathJobParameterName;
+	public void setRemoteFilePathParameterName(String remoteFilePathParameterName) {
+		this.remoteFilePathParameterName = remoteFilePathParameterName;
 	}
 
-	public String getLocalFilePathJobParameterName() {
-		return this.localFilePathJobParameterName;
+	public String getLocalFilePathParameterName() {
+		return this.localFilePathParameterName;
 	}
 
-	public void setLocalFilePathJobParameterName(String localFilePathJobParameterName) {
-		this.localFilePathJobParameterName = localFilePathJobParameterName;
+	public void setLocalFilePathParameterName(String localFilePathParameterName) {
+		this.localFilePathParameterName = localFilePathParameterName;
 	}
 
 	@NotBlank
-	public String getLocalFilePathJobParameterValue() {
-		return this.localFilePathJobParameterValue;
+	public String getLocalFilePathParameterValue() {
+		return this.localFilePathParameterValue;
 	}
 
-	public void setLocalFilePathJobParameterValue(String localFilePathJobParameterValue) {
-		this.localFilePathJobParameterValue = localFilePathJobParameterValue;
+	public void setLocalFilePathParameterValue(String localFilePathParameterValue) {
+		this.localFilePathParameterValue = localFilePathParameterValue;
 	}
 
-	public List<String> getJobParameters() {
-		return this.jobParameters;
+	public List<String> getParameters() {
+		return this.parameters;
 	}
 
-	public void setJobParameters(List<String> jobParameters) {
-		this.jobParameters = jobParameters;
+	public void setParameters(List<String> parameters) {
+		this.parameters = parameters;
 	}
 
 	public String getApplicationName() {

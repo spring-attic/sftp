@@ -23,7 +23,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
-import org.springframework.cloud.stream.app.sftp.source.batch.SftpSourceBatchProperties;
+import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
 
 /**
  * @author Chris Schaefer
@@ -32,12 +32,12 @@ import org.springframework.cloud.stream.app.sftp.source.batch.SftpSourceBatchPro
 public class SftpSourceTaskLauncherParsingTests {
 	@Test
 	public void testParseSimpleDeploymentProperty() {
-		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
+		SftpSourceTaskProperties sftpSourceTaskProperties = new SftpSourceTaskProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceTaskProperties);
 
-		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value");
+		sftpSourceTaskProperties.setDeploymentProperties("app.sftp.param=value");
 
 		Map<String, String> deploymentProperties = sftpSourceTaskLauncherConfiguration.getDeploymentProperties();
 		assertTrue("Invalid number of deployment properties: " + deploymentProperties.size(), deploymentProperties.size() == 1);
@@ -47,12 +47,12 @@ public class SftpSourceTaskLauncherParsingTests {
 
 	@Test
 	public void testParseSimpleDeploymentPropertyMultipleValues() {
-		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
+		SftpSourceTaskProperties sftpSourceTaskProperties = new SftpSourceTaskProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceTaskProperties);
 
-		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value1,value2");
+		sftpSourceTaskProperties.setDeploymentProperties("app.sftp.param=value1,value2");
 
 		Map<String, String> deploymentProperties = sftpSourceTaskLauncherConfiguration.getDeploymentProperties();
 		assertTrue("Invalid number of deployment properties: " + deploymentProperties.size(), deploymentProperties.size() == 1);
@@ -62,12 +62,12 @@ public class SftpSourceTaskLauncherParsingTests {
 
 	@Test
 	public void testParseMultipleDeploymentPropertiesSingleValue() {
-		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
+		SftpSourceTaskProperties sftpSourceTaskProperties = new SftpSourceTaskProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceTaskProperties);
 
-		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value1,app.sftp.other.param=value2");
+		sftpSourceTaskProperties.setDeploymentProperties("app.sftp.param=value1,app.sftp.other.param=value2");
 
 		Map<String, String> deploymentProperties = sftpSourceTaskLauncherConfiguration.getDeploymentProperties();
 		assertTrue("Invalid number of deployment properties: " + deploymentProperties.size(), deploymentProperties.size() == 2);
@@ -79,12 +79,12 @@ public class SftpSourceTaskLauncherParsingTests {
 
 	@Test
 	public void testParseMultipleDeploymentPropertiesMultipleValues() {
-		SftpSourceBatchProperties sftpSourceBatchProperties = new SftpSourceBatchProperties();
+		SftpSourceTaskProperties sftpSourceTaskProperties = new SftpSourceTaskProperties();
 
 		SftpSourceTaskLauncherConfiguration sftpSourceTaskLauncherConfiguration =
-				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceBatchProperties);
+				new SftpSourceTaskLauncherConfiguration(new SftpSourceProperties(), sftpSourceTaskProperties);
 
-		sftpSourceBatchProperties.setDeploymentProperties("app.sftp.param=value1,value2,app.sftp.other.param=other1,other2");
+		sftpSourceTaskProperties.setDeploymentProperties("app.sftp.param=value1,value2,app.sftp.other.param=other1,other2");
 
 		Map<String, String> deploymentProperties = sftpSourceTaskLauncherConfiguration.getDeploymentProperties();
 		assertTrue("Invalid number of deployment properties: " + deploymentProperties.size(), deploymentProperties.size() == 2);
