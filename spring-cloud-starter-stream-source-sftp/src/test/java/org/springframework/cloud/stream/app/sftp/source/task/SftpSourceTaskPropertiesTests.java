@@ -113,12 +113,6 @@ public class SftpSourceTaskPropertiesTests {
 	}
 
 	@Test
-	public void localFilePathParameterValueCanBeCustomized() {
-		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.localFilePathParameterValue:/home/files");
-		assertThat(properties.getLocalFilePathParameterValue(), equalTo("/home/files"));
-	}
-
-	@Test
 	public void parametersCanBeCustomized() {
 		SftpSourceTaskProperties properties = getBatchProperties("sftp.task.Parameters:jp1=jpv1,jp2=jpv2");
 		List<String> jobParameters = properties.getParameters();

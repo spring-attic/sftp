@@ -81,11 +81,6 @@ public class SftpSourceTaskProperties {
 	private String localFilePathParameterName = DEFAULT_LOCAL_FILE_PATH_PARAM_NAME;
 
 	/**
-	 * The file path to use as the local file parameter value. Defaults to "java.io.tmpdir".
-	 */
-	private String localFilePathParameterValue = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
-
-	/**
 	 * Comma separated list of optional parameters in key=value format.
 	 */
 	private List<String> parameters = new ArrayList<>();
@@ -162,15 +157,6 @@ public class SftpSourceTaskProperties {
 
 	public void setLocalFilePathParameterName(String localFilePathParameterName) {
 		this.localFilePathParameterName = localFilePathParameterName;
-	}
-
-	@NotBlank
-	public String getLocalFilePathParameterValue() {
-		return this.localFilePathParameterValue;
-	}
-
-	public void setLocalFilePathParameterValue(String localFilePathParameterValue) {
-		this.localFilePathParameterValue = localFilePathParameterValue;
 	}
 
 	public List<String> getParameters() {

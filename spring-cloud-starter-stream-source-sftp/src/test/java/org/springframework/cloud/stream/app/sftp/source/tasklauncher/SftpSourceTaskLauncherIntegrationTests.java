@@ -15,17 +15,13 @@
 
 package org.springframework.cloud.stream.app.sftp.source.tasklauncher;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,6 +34,7 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.cloud.task.launcher.TaskLaunchRequest;
 import org.springframework.http.MediaType;
+import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -46,7 +43,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MimeTypeUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.collection.IsIn.isOneOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 
 /**
@@ -55,8 +56,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Gary Russell
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = { "sftp.remoteDir = sftpSource",
-	"sftp.factory.username = foo", "sftp.factory.password = foo", "sftp.factory.allowUnknownKeys = true" })
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
+	"sftp.remoteDir = sftpSource",
+	"sftp.localDir = /tmp/files",
+	"sftp.factory.username = foo",
+	"sftp.factory.password = foo",
+	"sftp.factory.allowUnknownKeys = true" })
 @DirtiesContext
 public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSupport {
 
@@ -71,7 +76,7 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 	@TestPropertySource(properties = { "sftp.taskLauncherOutput = STANDALONE",
 		"sftp.task.resourceUri = file://some.jar", "sftp.task.dataSourceUserName = sa",
-		"sftp.task.dataSourceUrl = jdbc://host:2222/mem", "sftp.task.localFilePathParameterValue = /tmp/files/",
+		"sftp.task.dataSourceUrl = jdbc://host:2222/mem",
 		"sftp.task.Parameters = jpk1=jpv1,jpk2=jpv2", "sftp.factory.host = 127.0.0.1",
 		"sftp.factory.username = user", "sftp.factory.password = pass" })
 	public static class TaskLauncherOutputTests extends SftpSourceTaskLauncherIntegrationTests {
@@ -84,6 +89,11 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 				assertNotNull("No files were received", received);
 				assertThat(received.getPayload(), instanceOf(String.class));
+
+				assertThat(received.getHeaders().get(FileHeaders.REMOTE_FILE),isOneOf("sftpSource/sftpSource1.txt",
+					"sftpSource/sftpSource2.txt"));
+				assertThat(received.getHeaders().get(FileHeaders.FILENAME),isOneOf("/tmp/files/sftpSource1.txt",
+					"/tmp/files/sftpSource2.txt"));
 
 				assertEquals(MimeTypeUtils.APPLICATION_JSON, received.getHeaders().get(MessageHeaders.CONTENT_TYPE));
 				TaskLaunchRequest taskLaunchRequest = new ObjectMapper().readValue((String) received.getPayload(),

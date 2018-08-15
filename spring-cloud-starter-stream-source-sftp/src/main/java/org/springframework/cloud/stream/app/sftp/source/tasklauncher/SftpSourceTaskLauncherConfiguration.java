@@ -16,13 +16,17 @@
 
 package org.springframework.cloud.stream.app.sftp.source.tasklauncher;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
@@ -50,7 +54,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author David Turanski
  * @author Gary Russell
  */
-@EnableConfigurationProperties({ SftpSourceProperties.class, SftpSourceTaskProperties.class })
+@EnableConfigurationProperties(SftpSourceTaskProperties.class)
 @Import({ SftpSourceIdempotentReceiverConfiguration.class })
 public class SftpSourceTaskLauncherConfiguration {
 
@@ -74,7 +78,6 @@ public class SftpSourceTaskLauncherConfiguration {
 
 	private final SftpSourceTaskProperties sftpSourceTaskProperties;
 
-	@Autowired
 	public SftpSourceTaskLauncherConfiguration(SftpSourceProperties sftpSourceProperties,
 		SftpSourceTaskProperties sftpSourceTaskProperties) {
 		this.sftpSourceProperties = sftpSourceProperties;
@@ -88,14 +91,19 @@ public class SftpSourceTaskLauncherConfiguration {
 	@Bean
 	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "STANDALONE")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
-	public MessageProcessor<Message<?>> standaloneTaskLaunchRequestTransformer() {
+	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = "processOutput")
+	public MessageProcessor<Message> standaloneTaskLaunchRequestTransformer() {
+
 		return message -> {
 			TaskLaunchRequest outboundPayload = new TaskLaunchRequest(sftpSourceTaskProperties.getResourceUri(),
 				getCommandLineArgs(message), getEnvironmentProperties(), getDeploymentProperties(), null);
 			MessageBuilder<TaskLaunchRequest> builder = MessageBuilder.withPayload(outboundPayload)
 				.copyHeaders(message.getHeaders())
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON);
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+				.setHeader(FileHeaders.REMOTE_FILE, getRemoteFilePath(message))
+				.setHeader(FileHeaders.FILENAME,
+					getLocalFilePath(sftpSourceProperties.getLocalDir().getPath(), (String) message.getPayload()));
+
 			if (this.sftpSourceProperties.isMultiSource()) {
 				outboundPayload.getEnvironmentProperties().put(SFTP_HOST_PROPERTY_KEY,
 						(String) message.getHeaders().get(SFTP_HOST_PROPERTY_KEY));
@@ -117,20 +125,22 @@ public class SftpSourceTaskLauncherConfiguration {
 	@Bean
 	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "DATAFLOW")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
-	public MessageProcessor<Message<?>> dataflowTaskLauchRequestTransformer() {
+	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = "processOutput")
+	public MessageProcessor<Message> dataflowTaskLauchRequestTransformer() {
 		return message -> {
 			DataFlowTaskLaunchRequest taskLaunchRequest = new DataFlowTaskLaunchRequest();
 			taskLaunchRequest.setCommandlineArguments(getCommandLineArgs(message));
 			taskLaunchRequest.setDeploymentProperties(getDeploymentProperties());
 			taskLaunchRequest.setApplicationName(sftpSourceTaskProperties.getApplicationName());
+
 			return MessageBuilder.withPayload(taskLaunchRequest)
 				.copyHeaders(message.getHeaders())
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+				.setHeader(FileHeaders.REMOTE_FILE, getRemoteFilePath(message))
+				.setHeader(FileHeaders.FILENAME,
+					getLocalFilePath(sftpSourceProperties.getLocalDir().getPath(), (String) message.getPayload()))
 				.build();
 		};
 	}
-
 
 	private Map<String, String> getEnvironmentProperties() {
 		Map<String, String> environmentProperties = new HashMap<>();
@@ -194,19 +204,40 @@ public class SftpSourceTaskLauncherConfiguration {
 
 		String filename = (String) message.getPayload();
 		String remoteDirectory = (String) message.getHeaders().get(FileHeaders.REMOTE_DIRECTORY);
-		String localFilePathJobParameterValue = sftpSourceTaskProperties.getLocalFilePathParameterValue();
 
-		String remoteFilePath = remoteDirectory + filename;
-		String localFilePath = localFilePathJobParameterValue + filename;
-		String localFilePathJobParameterName = sftpSourceTaskProperties.getLocalFilePathParameterName();
-		String remoteFilePathJobParameterName = sftpSourceTaskProperties.getRemoteFilePathParameterName();
+		String localFilePathParameterValue = sftpSourceProperties.getLocalDir().exists() ?
+			sftpSourceProperties.getLocalDir().getAbsolutePath() :
+			sftpSourceProperties.getLocalDir().getPath();
+
+		String remoteFilePath = getRemoteFilePath(message);
+		String localFilePath = getLocalFilePath(localFilePathParameterValue, filename);
+
+		String localFilePathParameterName = sftpSourceTaskProperties.getLocalFilePathParameterName();
+		String remoteFilePathParameterName = sftpSourceTaskProperties.getRemoteFilePathParameterName();
 
 		List<String> commandLineArgs = new ArrayList<>();
-		commandLineArgs.add(remoteFilePathJobParameterName + "=" + remoteFilePath);
-		commandLineArgs.add(localFilePathJobParameterName + "=" + localFilePath);
+		commandLineArgs.add(remoteFilePathParameterName + "=" + remoteFilePath);
+		commandLineArgs.add(localFilePathParameterName + "=" + localFilePath);
 		commandLineArgs.addAll(sftpSourceTaskProperties.getParameters());
 
 		return commandLineArgs;
+	}
+
+	private String getRemoteFilePath(Message message) {
+		String filename = (String) message.getPayload();
+		String remoteDirectory = (String) message.getHeaders().get(FileHeaders.REMOTE_DIRECTORY);
+		return getPath(remoteDirectory, filename);
+	}
+
+	private String getLocalFilePath(String localDirectory, String filename) {
+		if (localDirectory != null) {
+			return getPath(localDirectory, filename);
+		}
+		return filename;
+	}
+
+	private String getPath(String dirName, String fileName) {
+		return Paths.get(dirName, fileName).toString();
 	}
 
 	static class DataFlowTaskLaunchRequest {

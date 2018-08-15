@@ -29,6 +29,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
 			<artifactId>app-starters-metadata-store-common</artifactId>
+			<version>2.0.2.BUILD-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
@@ -60,6 +61,10 @@
 			<artifactId>spring-integration-hazelcast</artifactId>
 			<version>1.0.0.RELEASE</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream</artifactId>
 		</dependency>
 	</dependencies>
 
