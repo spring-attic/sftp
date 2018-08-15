@@ -25,6 +25,7 @@ import java.util.Properties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
@@ -81,7 +82,7 @@ public class SftpSourceTaskLauncherConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.taskLauncherOutput", havingValue = "STANDALONE")
+	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "STANDALONE")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public MessageProcessor<Message> sftpFileTaskLauncherTransformer() {
@@ -96,7 +97,7 @@ public class SftpSourceTaskLauncherConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.taskLauncherOutput", havingValue = "DATAFLOW")
+	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "DATAFLOW")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public MessageProcessor<Message> dataflowTaskLauchRequestTransformer() {
