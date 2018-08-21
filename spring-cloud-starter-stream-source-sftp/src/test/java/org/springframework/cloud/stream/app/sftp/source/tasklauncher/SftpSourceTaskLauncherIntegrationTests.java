@@ -167,16 +167,15 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 	}
 
 	@TestPropertySource(properties = {
-			"sftp.taskLauncherOutput = true",
-			"sftp.batch.batchResourceUri = file://some.jar",
-			"sftp.batch.dataSourceUserName = sa",
-			"sftp.batch.dataSourceUrl = jdbc://host:2222/mem",
-			"sftp.batch.localFilePathJobParameterValue = /tmp/files/",
-			"sftp.batch.jobParameters = jpk1=jpv1,jpk2=jpv2",
+			"sftp.taskLauncherOutput = STANDALONE",
+			"sftp.task.resourceUri = file://some.jar",
+			"sftp.task.dataSourceUserName = sa",
+			"sftp.task.dataSourceUrl = jdbc://host:2222/mem",
+			"sftp.task.localFilePathParameterValue = /tmp/files/",
+			"sftp.task.parameters = jpk1=jpv1,jpk2=jpv2",
 			"sftp.factory.host = 127.0.0.1",
 			"sftp.factory.username = user",
 			"sftp.factory.password = pass",
-			"sftp.metadata.redis.keyName = sftpSourceTest",
 			"sftp.factories.one.host=localhost",
 			"sftp.factories.one.port=${sftp.factory.port}",
 			"sftp.factories.one.username = user",
