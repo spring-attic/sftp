@@ -119,6 +119,8 @@ $$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources. 
 $$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data. 	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.auto-create-local-dir$$:: $$Set to true to create the local directory if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.delete-remote-files$$:: $$Set to true to delete remote files after successful transfer.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.directories$$:: $$A list of factory "name.directory" pairs.$$ *($$String[]$$, default: `$$<none>$$`)*
+$$sftp.factories$$:: $$A map of factory names to factories.$$ *($$Map<String, Factory>$$, default: `$$<none>$$`)*
 $$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.factory.host$$:: $$The host name of the server.$$ *($$String$$, default: `$$localhost$$`)*
@@ -128,10 +130,12 @@ $$sftp.factory.password$$:: $$The password to use to connect to the server.$$ *(
 $$sftp.factory.port$$:: $$The port of the server.$$ *($$Integer$$, default: `$$22$$`)*
 $$sftp.factory.private-key$$:: $$Resource location of user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.fair$$:: $$True for fair polling of multiple servers/directories.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.filename-pattern$$:: $$A filter pattern to match the names of files to transfer.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.filename-regex$$:: $$A filter regex pattern to match the names of files to transfer.$$ *($$Pattern$$, default: `$$<none>$$`)*
 $$sftp.list-only$$:: $$Set to true to return file metadata without the entire payload.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
+$$sftp.max-fetch$$:: $$The maximum number of remote files to fetch per poll; default unlimited. Does not apply when listing files or building task launch requests.$$ *($$Integer$$, default: `$$<none>$$`)*
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
