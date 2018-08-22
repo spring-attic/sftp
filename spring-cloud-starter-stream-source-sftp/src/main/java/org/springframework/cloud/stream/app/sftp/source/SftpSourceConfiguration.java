@@ -267,13 +267,6 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.stream")
-	public SftpRemoteFileTemplate sftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
-			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
-			SftpSourceProperties properties) {
-		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
-	}
-
 	public IntegrationFlow sftpProcessOutput() {
 		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(processOutput()).bridge();
 		if (functionSupport != null) {
@@ -283,6 +276,14 @@ public class SftpSourceConfiguration {
 			flowBuilder = flowBuilder.channel(source.output());
 		}
 		return flowBuilder.get();
+	}
+
+	@Bean
+	@ConditionalOnProperty(name = "sftp.stream")
+	public SftpRemoteFileTemplate sftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
+			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
+			SftpSourceProperties properties) {
+		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
 	@Bean

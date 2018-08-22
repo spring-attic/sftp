@@ -75,7 +75,7 @@ import org.springframework.util.MimeTypeUtils;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = { "sftp.remoteDir = sftpSource",
 	"sftp.factory.username = foo", "sftp.factory.password = foo", "sftp.factory.allowUnknownKeys = true",
-	"sftp.filenameRegex = .*" })
+	"sftp.filenameRegex = .*", "logging.level.com.jcraft.jsch=WARN" })
 @DirtiesContext
 public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
