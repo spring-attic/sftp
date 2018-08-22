@@ -20,6 +20,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -27,6 +28,7 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -280,7 +282,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		}
 
 		@Test
-		public void sourceFilesAsRef() throws Exception {
+		public void sourceFilesAsRefSftpSource3ComesSecond() throws Exception {
 			assertThat(
 					TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class).size())
 							.isEqualTo(2);
@@ -291,16 +293,18 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).get(0))
 				.isInstanceOf(RotatingServerAdvice.class);
 			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
-			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch 1
+
 			for (int i = 1; i <= 3; i++) {
 				Message<?> received = messages.poll(10, TimeUnit.SECONDS);
 				assertNotNull(received);
 				assertThat(received.getPayload(), instanceOf(String.class));
 				File payload = objectMapper.readValue((String) received.getPayload(), File.class);
 
-				assertThat(payload,
-						equalTo(new File(config.getLocalDir() + File.separator + "sftpSource" +
-									expectedOrder[i] + ".txt")));
+				assertThat(payload, (i==2) ?
+					equalTo(Paths.get(config.getLocalDir().getPath(),"sftpSource3.txt").toFile()) :
+					isOneOf(Paths.get(config.getLocalDir().getPath(),"sftpSource1.txt").toFile(),
+						Paths.get(config.getLocalDir().getPath(),"sftpSource2.txt").toFile()));
+
 			}
 			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
 		}
@@ -382,17 +386,18 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		}
 
 		@Test
-		public void streamSourceFilesAsContents() throws InterruptedException {
+		public void streamContentsSource3ComesSecond() throws InterruptedException {
 			assertEquals(1,
 					TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size());
-			int [] expectedOrder = new int[] { 0, 1, 3, 2 }; // max fetch 1
 			for (int i = 1; i <= 3; i++) {
 				@SuppressWarnings("unchecked")
 				Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(sftpSource.output())
 						.poll(10, TimeUnit.SECONDS);
 				assertNotNull((i - 1) + " files were received, expected 3", received);
-				System.out.println(received);
-				assertThat(new String(received.getPayload()), equalTo("source" + expectedOrder[i]));
+
+				assertThat(new String(received.getPayload()), (i==2) ?
+						equalTo("source3") :
+						isOneOf("source1", "source2"));
 			}
 			int n = 0;
 			while (n++ < 100 && getSourceRemoteDirectory().list().length > 0) {
