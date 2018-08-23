@@ -56,6 +56,7 @@ import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.hazelcast.metadata.HazelcastMetadataStore;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
+import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
 import org.springframework.integration.test.util.TestUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -140,6 +141,9 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	@TestPropertySource(properties = { "file.consumer.mode = ref",
 		"spring.cloud.stream.bindings.output.contentType=text/plain" })
 	public static class RefTestsTextOutputContentType extends SftpSourceIntegrationTests {
+		
+		@Autowired
+		SftpRemoteFileTemplate template;
 
 		@Test
 		public void sourceFilesAsRef() throws Exception {

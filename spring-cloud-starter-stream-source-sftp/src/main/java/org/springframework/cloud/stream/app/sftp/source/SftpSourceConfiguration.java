@@ -279,15 +279,15 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.stream")
-	public SftpRemoteFileTemplate sftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
+	@ConditionalOnProperty(name = "sftp.stream", havingValue = "true", matchIfMissing = false)
+	public SftpRemoteFileTemplate wrappedSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
 			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
 			SftpSourceProperties properties) {
 		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
 	@Bean
-	public SftpRemoteFileTemplate sftpTemplate(SessionFactory<LsEntry> sftpSessionFactory) {
+	public SftpRemoteFileTemplate defaultSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory) {
 		return new SftpRemoteFileTemplate(sftpSessionFactory);
 	}
 
