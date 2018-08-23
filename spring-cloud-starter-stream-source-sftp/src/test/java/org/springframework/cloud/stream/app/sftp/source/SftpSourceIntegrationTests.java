@@ -141,7 +141,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	@TestPropertySource(properties = { "file.consumer.mode = ref",
 		"spring.cloud.stream.bindings.output.contentType=text/plain" })
 	public static class RefTestsTextOutputContentType extends SftpSourceIntegrationTests {
-		
+
 		@Autowired
 		SftpRemoteFileTemplate template;
 
