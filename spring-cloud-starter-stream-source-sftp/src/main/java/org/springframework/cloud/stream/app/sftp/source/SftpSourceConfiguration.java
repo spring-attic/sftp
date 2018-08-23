@@ -279,7 +279,7 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.stream", havingValue = "true", matchIfMissing = false)
+	@ConditionalOnProperty(name = "sftp.stream", havingValue = "true")
 	public SftpRemoteFileTemplate wrappedSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
 			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
 			SftpSourceProperties properties) {
@@ -287,7 +287,7 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.stream", havingValue = "false", matchIfMissing = false)
+	@ConditionalOnProperty(name = "sftp.stream", havingValue = "false", matchIfMissing = true)
 	public SftpRemoteFileTemplate defaultSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory) {
 		return new SftpRemoteFileTemplate(sftpSessionFactory);
 	}
