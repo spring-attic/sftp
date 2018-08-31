@@ -40,6 +40,7 @@ import java.util.function.Function;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -200,9 +201,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	@TestPropertySource(properties = { "sftp.stream = true", "file.consumer.mode = contents",
 		"sftp.delete-remote-files = true", "spring.cloud.stream.function.definition=upper" })
-
 	public static class FunctionTests extends SftpSourceIntegrationTests {
-
+		@Ignore
 		@Test
 		public void streamSourceFilesAsContents() throws InterruptedException {
 			assertEquals(".*", TestUtils.getPropertyValue(

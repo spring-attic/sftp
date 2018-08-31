@@ -118,9 +118,6 @@ public class SftpSourceConfiguration {
 	@Autowired(required = false)
 	private RotatingServerAdvice fileSourceRotator;
 
-	@Autowired(required = false)
-	private IntegrationFlowFunctionSupport functionSupport;
-
 
 	@Bean
 	public MessageChannel sftpFileListChannel() {
@@ -130,12 +127,6 @@ public class SftpSourceConfiguration {
 	@Bean
 	public MessageChannel sftpFileTaskLaunchChannel() {
 		return new DirectChannel();
-	}
-
-	@SuppressWarnings("resource")
-	@Bean
-	public MessageChannel processOutput() {
-		return new FluxMessageChannel();
 	}
 
 	@Bean
@@ -196,7 +187,7 @@ public class SftpSourceConfiguration {
 			}
 		}
 
-		flowBuilder = flowBuilder.channel(processOutput());
+		flowBuilder = flowBuilder.channel(Source.OUTPUT);
 
 		return flowBuilder.get();
 	}
@@ -266,36 +257,25 @@ public class SftpSourceConfiguration {
 		return spec -> spec.poller(poller);
 	}
 
-	@Bean
-	public IntegrationFlow sftpProcessOutput() {
-		IntegrationFlowBuilder flowBuilder = IntegrationFlows.from(processOutput()).bridge();
-		if (functionSupport != null) {
-			functionSupport.andThenFunction(flowBuilder, source.output());
-		}
-		else {
-			flowBuilder = flowBuilder.channel(source.output());
-		}
-		return flowBuilder.get();
-	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.stream", havingValue = "true")
+	//@ConditionalOnProperty(name = "sftp.stream", havingValue = "true")
 	public SftpRemoteFileTemplate wrappedSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
 			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
 			SftpSourceProperties properties) {
 		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
-	@Bean
-	@ConditionalOnProperty(name = "sftp.stream", havingValue = "false", matchIfMissing = true)
-	public SftpRemoteFileTemplate defaultSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory) {
-		return new SftpRemoteFileTemplate(sftpSessionFactory);
-	}
+//	@Bean
+//	@ConditionalOnProperty(name = "sftp.stream", havingValue = "false", matchIfMissing = true)
+//	public SftpRemoteFileTemplate defaultSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory) {
+//		return new SftpRemoteFileTemplate(sftpSessionFactory);
+//	}
 
 	//TODO: This COP doesn't apply since not a bean
 	@ConditionalOnProperty(name = "sftp.listOnly")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileListChannel", outputChannel = "processOutput")
+	@ServiceActivator(inputChannel = "sftpFileListChannel", outputChannel = Source.OUTPUT)
 	public Message transformSftpMessage(Message message) {
 		MessageHeaders messageHeaders = message.getHeaders();
 		Assert.notNull(messageHeaders, "Cannot transform message with null headers");

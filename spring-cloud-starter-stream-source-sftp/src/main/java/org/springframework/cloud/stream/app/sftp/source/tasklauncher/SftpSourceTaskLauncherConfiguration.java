@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-
-import org.springframework.beans.factory.annotation.Autowired;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,8 +44,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Chris Schaefer
@@ -91,7 +87,7 @@ public class SftpSourceTaskLauncherConfiguration {
 	@Bean
 	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "STANDALONE")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = "processOutput")
+	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public MessageProcessor<Message> standaloneTaskLaunchRequestTransformer() {
 
 		return message -> {
@@ -105,18 +101,19 @@ public class SftpSourceTaskLauncherConfiguration {
 					getLocalFilePath(sftpSourceProperties.getLocalDir().getPath(), (String) message.getPayload()));
 
 			if (this.sftpSourceProperties.isMultiSource()) {
-				outboundPayload.getEnvironmentProperties().put(SFTP_HOST_PROPERTY_KEY,
-						(String) message.getHeaders().get(SFTP_HOST_PROPERTY_KEY));
-				outboundPayload.getEnvironmentProperties().put(SFTP_PORT_PROPERTY_KEY,
-						String.valueOf(message.getHeaders().get(SFTP_PORT_PROPERTY_KEY)));
-				outboundPayload.getEnvironmentProperties().put(SFTP_USERNAME_PROPERTY_KEY,
-						(String) message.getHeaders().get(SFTP_USERNAME_PROPERTY_KEY));
-				outboundPayload.getEnvironmentProperties().put(SFTP_PASSWORD_PROPERTY_KEY,
-						(String) message.getHeaders().get(SFTP_PASSWORD_PROPERTY_KEY));
-				outboundPayload.getEnvironmentProperties().put(SFTP_SELECTED_SERVER_PROPERTY_KEY,
+				outboundPayload.getEnvironmentProperties()
+					.put(SFTP_HOST_PROPERTY_KEY, (String) message.getHeaders().get(SFTP_HOST_PROPERTY_KEY));
+				outboundPayload.getEnvironmentProperties()
+					.put(SFTP_PORT_PROPERTY_KEY, String.valueOf(message.getHeaders().get(SFTP_PORT_PROPERTY_KEY)));
+				outboundPayload.getEnvironmentProperties()
+					.put(SFTP_USERNAME_PROPERTY_KEY, (String) message.getHeaders().get(SFTP_USERNAME_PROPERTY_KEY));
+				outboundPayload.getEnvironmentProperties()
+					.put(SFTP_PASSWORD_PROPERTY_KEY, (String) message.getHeaders().get(SFTP_PASSWORD_PROPERTY_KEY));
+				outboundPayload.getEnvironmentProperties()
+					.put(SFTP_SELECTED_SERVER_PROPERTY_KEY,
 						(String) message.getHeaders().get(SFTP_SELECTED_SERVER_PROPERTY_KEY));
 				builder.removeHeaders(SFTP_HOST_PROPERTY_KEY, SFTP_PORT_PROPERTY_KEY, SFTP_USERNAME_PROPERTY_KEY,
-						SFTP_PASSWORD_PROPERTY_KEY, SFTP_SELECTED_SERVER_PROPERTY_KEY);
+					SFTP_PASSWORD_PROPERTY_KEY, SFTP_SELECTED_SERVER_PROPERTY_KEY);
 			}
 			return builder.build();
 		};
@@ -125,7 +122,7 @@ public class SftpSourceTaskLauncherConfiguration {
 	@Bean
 	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "DATAFLOW")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = "processOutput")
+	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public MessageProcessor<Message> dataflowTaskLauchRequestTransformer() {
 		return message -> {
 			DataFlowTaskLaunchRequest taskLaunchRequest = new DataFlowTaskLaunchRequest();
@@ -152,7 +149,7 @@ public class SftpSourceTaskLauncherConfiguration {
 			environmentProperties.put(SFTP_USERNAME_PROPERTY_KEY, sftpSourceProperties.getFactory().getUsername());
 			environmentProperties.put(SFTP_PASSWORD_PROPERTY_KEY, sftpSourceProperties.getFactory().getPassword());
 			environmentProperties.put(SFTP_PORT_PROPERTY_KEY,
-					String.valueOf(sftpSourceProperties.getFactory().getPort()));
+				String.valueOf(sftpSourceProperties.getFactory().getPort()));
 		}
 
 		String providedProperties = sftpSourceTaskProperties.getEnvironmentProperties();
@@ -203,7 +200,6 @@ public class SftpSourceTaskLauncherConfiguration {
 		Assert.notNull(message, "Message from which to create TaskLaunchRequest cannot be null");
 
 		String filename = (String) message.getPayload();
-		String remoteDirectory = (String) message.getHeaders().get(FileHeaders.REMOTE_DIRECTORY);
 
 		String localFilePathParameterValue = sftpSourceProperties.getLocalDir().exists() ?
 			sftpSourceProperties.getLocalDir().getAbsolutePath() :
