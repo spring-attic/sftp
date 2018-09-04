@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Consumer;
 
+import com.jcraft.jsch.ChannelSftp.LsEntry;
 import org.aopalliance.aop.Advice;
 
 import org.springframework.beans.BeanUtils;
@@ -38,14 +39,12 @@ import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdemp
 import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
-import org.springframework.cloud.stream.function.IntegrationFlowFunctionSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -76,8 +75,6 @@ import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
-
-import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 /**
  * @author Gary Russell
@@ -259,18 +256,11 @@ public class SftpSourceConfiguration {
 
 
 	@Bean
-	//@ConditionalOnProperty(name = "sftp.stream", havingValue = "true")
 	public SftpRemoteFileTemplate wrappedSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
 			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
 			SftpSourceProperties properties) {
 		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
-
-//	@Bean
-//	@ConditionalOnProperty(name = "sftp.stream", havingValue = "false", matchIfMissing = true)
-//	public SftpRemoteFileTemplate defaultSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory) {
-//		return new SftpRemoteFileTemplate(sftpSessionFactory);
-//	}
 
 	//TODO: This COP doesn't apply since not a bean
 	@ConditionalOnProperty(name = "sftp.listOnly")
