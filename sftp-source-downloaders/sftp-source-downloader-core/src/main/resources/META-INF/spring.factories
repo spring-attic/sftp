@@ -1,1 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=io.spring.example.sftp.downloader.SftpFunctionAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpFunctionAutoConfiguration
