@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.stream.app.sftp.source.downloader.local;
 
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileInputStreamPersister;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamPersister;
 
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,6 @@ public class LocalInputStreamPersisterAutoConfiguration {
 
 	@Bean
 	public InputStreamPersister localInputStreamPersister() {
-		return new LocalInputStreamPersister();
+		return new FileInputStreamPersister();
 	}
 }

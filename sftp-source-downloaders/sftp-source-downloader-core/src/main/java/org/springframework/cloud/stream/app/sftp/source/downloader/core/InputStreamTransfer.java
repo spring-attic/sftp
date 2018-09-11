@@ -28,8 +28,6 @@ public class InputStreamTransfer {
 	private final String target;
 	private final Map<String,String> metadata;
 
-	public static final String HEADER_NAME = InputStreamTransfer.class.getName();
-
 	public InputStreamTransfer(InputStream source, String target, Map<String, String> metadata) {
 		this.source = source;
 		this.target = target;

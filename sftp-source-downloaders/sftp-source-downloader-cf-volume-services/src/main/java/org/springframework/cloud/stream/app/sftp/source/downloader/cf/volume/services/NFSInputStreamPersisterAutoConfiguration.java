@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.app.sftp.source.downloader.cf.volume.services;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileInputStreamPersister;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamPersister;
 
 import org.springframework.beans.BeansException;
@@ -34,11 +36,12 @@ import org.springframework.lang.Nullable;
  **/
 @Configuration
 @ConditionalOnCloudPlatform(CloudPlatform.CLOUD_FOUNDRY)
+@ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "CF_VOLUME")
 public class NFSInputStreamPersisterAutoConfiguration {
 
 	@Bean
 	public InputStreamPersister nfsInputStreamPersister(VcapService nfs) {
-		return new NFSInputStreamPersister(nfs.getVolumeMounts().get(0).getContainerDir());
+		return new FileInputStreamPersister(nfs.getVolumeMounts().get(0).getContainerDir());
 	}
 
 	@Bean
@@ -47,7 +50,7 @@ public class NFSInputStreamPersisterAutoConfiguration {
 	}
 
 	@Bean
-	static NFSConfigPostProcessor postProcessor(Environment environment) {
+	public static NFSConfigPostProcessor postProcessor(Environment environment) {
 		return new NFSConfigPostProcessor(environment);
 	}
 

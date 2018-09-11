@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.app.sftp.source.downloader.s3;
 
 import com.amazonaws.services.s3.AmazonS3;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamPersister;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -27,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
  * @author David Turanski
  **/
 @Configuration
+@ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "S3")
 @EnableConfigurationProperties(AmazonS3ConfigurationProperties.class)
 public class S3InputStreamPersisterAutoConfiguration {
 	@Bean

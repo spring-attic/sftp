@@ -18,7 +18,8 @@ package org.springframework.cloud.stream.app.sftp.source.downloader.core;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -27,17 +28,42 @@ import org.apache.commons.logging.LogFactory;
 /**
  * @author David Turanski
  **/
-public abstract class AbstractFileInputStreamPersister implements InputStreamPersister {
+public class FileInputStreamPersister implements InputStreamPersister {
+	private final String rootPath;
+
 	protected Log log = LogFactory.getLog(this.getClass());
 
+	public FileInputStreamPersister() {
+		this(null);
+	}
 
-	protected void doSave(InputStream inputStream, File targetFile) {
+	public FileInputStreamPersister(String rootPath) {
+		this.rootPath = rootPath;
+	}
+
+	@Override
+	public void save(InputStreamTransfer transfer) {
+		File targetFile = getFile(transfer.getTarget());
+		log.info(String.format("Saving source contents to file %s", targetFile.getAbsolutePath()));
 		try {
-			log.info(String.format("Saving source contents to file %s", targetFile.getAbsolutePath()));
-			FileUtils.copyInputStreamToFile(inputStream, targetFile);
+			FileUtils.copyInputStreamToFile(transfer.getSource(), targetFile);
 		}
 		catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException(e.getMessage(), e);
 		}
+	}
+
+	private File getFile(String targetPath) {
+
+		Path path;
+
+		if (!Paths.get(targetPath).isAbsolute() && rootPath != null) {
+			path = Paths.get(rootPath, targetPath);
+		}
+		else {
+			path = Paths.get(targetPath);
+		}
+
+		return path.toFile();
 	}
 }
