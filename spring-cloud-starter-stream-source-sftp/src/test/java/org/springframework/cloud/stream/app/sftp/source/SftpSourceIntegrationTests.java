@@ -15,6 +15,41 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hamcrest.Matchers;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
+import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
+import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.cloud.stream.test.binder.MessageCollector;
+import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
+import org.springframework.integration.hazelcast.metadata.HazelcastMetadataStore;
+import org.springframework.integration.metadata.ConcurrentMetadataStore;
+import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
+import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
+import org.springframework.integration.test.util.TestUtils;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -26,46 +61,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hamcrest.Matchers;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
-import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
-import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.test.binder.MessageCollector;
-import org.springframework.context.annotation.Bean;
-import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
-import org.springframework.integration.hazelcast.metadata.HazelcastMetadataStore;
-import org.springframework.integration.metadata.ConcurrentMetadataStore;
-import org.springframework.integration.sftp.inbound.SftpStreamingMessageSource;
-import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
-import org.springframework.integration.test.util.TestUtils;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.MimeTypeUtils;
 
 /**
  * @author David Turanski
@@ -199,31 +194,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		}
 	}
 
-	@TestPropertySource(properties = { "sftp.stream = true", "file.consumer.mode = contents",
-		"sftp.delete-remote-files = true", "spring.cloud.stream.function.definition=upper" })
-	public static class FunctionTests extends SftpSourceIntegrationTests {
-
-		@Test
-		public void streamSourceFilesAsContents() throws InterruptedException {
-			assertEquals(".*", TestUtils.getPropertyValue(
-				TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "source.filter.fileFilters", Set.class)
-					.iterator()
-					.next(), "pattern").toString());
-			for (int i = 1; i <= 2; i++) {
-				@SuppressWarnings("unchecked") Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(
-					sftpSource.output()).poll(10, TimeUnit.SECONDS);
-				assertNotNull(received);
-				assertThat(new String(received.getPayload()), startsWith("SOURCE"));
-			}
-			int n = 0;
-			while (n++ < 100 && getSourceRemoteDirectory().list().length > 0) {
-				Thread.sleep(100);
-			}
-			assertThat(getSourceRemoteDirectory().list().length, equalTo(0)); // deleted
-		}
-
-	}
-
 	@TestPropertySource(properties = { "sftp.stream = true", "file.consumer.mode = lines",
 		"file.consumer.with-markers = true", "file.consumer.markers-json = false",
 		"logging.level.org.springframework.integration=DEBUG" })
@@ -272,23 +242,14 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	}
 
-	@TestPropertySource(properties = {"file.consumer.mode = ref",
-			"sftp.factories.one.host=localhost",
-			"sftp.factories.one.port=${sftp.factory.port}",
-			"sftp.factories.one.username = user",
-			"sftp.factories.one.password = pass",
-			"sftp.factories.one.cache-sessions = true",
-			"sftp.factories.one.allowUnknownKeys = true",
-			"sftp.factories.two.host=localhost",
-			"sftp.factories.two.port=${sftp.factory.port}",
-			"sftp.factories.two.username = user",
-			"sftp.factories.two.password = pass",
-			"sftp.factories.two.cache-sessions = true",
-			"sftp.factories.two.allowUnknownKeys = true",
-			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
-			"sftp.max-fetch=1",
-			"sftp.fair=true"
-	})
+	@TestPropertySource(properties = { "file.consumer.mode = ref", "sftp.factories.one.host=localhost",
+		"sftp.factories.one.port=${sftp.factory.port}", "sftp.factories.one.username = user",
+		"sftp.factories.one.password = pass", "sftp.factories.one.cache-sessions = true",
+		"sftp.factories.one.allowUnknownKeys = true", "sftp.factories.two.host=localhost",
+		"sftp.factories.two.port=${sftp.factory.port}", "sftp.factories.two.username = user",
+		"sftp.factories.two.password = pass", "sftp.factories.two.cache-sessions = true",
+		"sftp.factories.two.allowUnknownKeys = true",
+		"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource", "sftp.max-fetch=1", "sftp.fair=true" })
 	public static class MultiSourceRefTests extends SftpSourceIntegrationTests {
 
 		@Autowired
@@ -305,15 +266,14 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 		@Test
 		public void sourceFilesAsRefSftpSource3ComesSecond() throws Exception {
+			assertThat(TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class)
+				.size()).isEqualTo(2);
 			assertThat(
-					TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class).size())
-							.isEqualTo(2);
-			assertThat(TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.defaultFactory"))
-					.isNotNull();
-			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size())
-				.isEqualTo(1);
-			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).get(0))
-				.isInstanceOf(RotatingServerAdvice.class);
+				TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.defaultFactory")).isNotNull();
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class)
+				.size()).isEqualTo(1);
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class)
+				.get(0)).isInstanceOf(RotatingServerAdvice.class);
 			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
 
 			for (int i = 1; i <= 3; i++) {
@@ -322,10 +282,10 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 				assertThat(received.getPayload(), instanceOf(String.class));
 				File payload = objectMapper.readValue((String) received.getPayload(), File.class);
 
-				assertThat(payload, (i==2) ?
-					equalTo(Paths.get(config.getLocalDir().getPath(),"sftpSource3.txt").toFile()) :
-					isOneOf(Paths.get(config.getLocalDir().getPath(),"sftpSource1.txt").toFile(),
-						Paths.get(config.getLocalDir().getPath(),"sftpSource2.txt").toFile()));
+				assertThat(payload, (i == 2) ?
+					equalTo(Paths.get(config.getLocalDir().getPath(), "sftpSource3.txt").toFile()) :
+					isOneOf(Paths.get(config.getLocalDir().getPath(), "sftpSource1.txt").toFile(),
+						Paths.get(config.getLocalDir().getPath(), "sftpSource2.txt").toFile()));
 
 			}
 			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
@@ -333,22 +293,14 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	}
 
-	@TestPropertySource(properties = {"file.consumer.mode = ref",
-			"sftp.factories.one.host=localhost",
-			"sftp.factories.one.port=${sftp.factory.port}",
-			"sftp.factories.one.username = user",
-			"sftp.factories.one.password = pass",
-			"sftp.factories.one.cache-sessions = true",
-			"sftp.factories.one.allowUnknownKeys = true",
-			"sftp.factories.two.host=localhost",
-			"sftp.factories.two.port=${sftp.factory.port}",
-			"sftp.factories.two.username = user",
-			"sftp.factories.two.password = pass",
-			"sftp.factories.two.cache-sessions = true",
-			"sftp.factories.two.allowUnknownKeys = true",
-			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
-			"sftp.list-only=true"
-	})
+	@TestPropertySource(properties = { "file.consumer.mode = ref", "sftp.factories.one.host=localhost",
+		"sftp.factories.one.port=${sftp.factory.port}", "sftp.factories.one.username = user",
+		"sftp.factories.one.password = pass", "sftp.factories.one.cache-sessions = true",
+		"sftp.factories.one.allowUnknownKeys = true", "sftp.factories.two.host=localhost",
+		"sftp.factories.two.port=${sftp.factory.port}", "sftp.factories.two.username = user",
+		"sftp.factories.two.password = pass", "sftp.factories.two.cache-sessions = true",
+		"sftp.factories.two.allowUnknownKeys = true",
+		"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource", "sftp.list-only=true" })
 	public static class MultiSourceListTests extends SftpSourceIntegrationTests {
 
 		@Autowired
@@ -365,37 +317,26 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 		@Test
 		public void sourceFilesAsRef() throws Exception {
+			assertThat(TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class)
+				.size()).isEqualTo(2);
 			assertThat(
-					TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.factories", Map.class).size())
-							.isEqualTo(2);
-			assertThat(TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.defaultFactory"))
-					.isNotNull();
-			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size())
-				.isEqualTo(1);
-			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).get(0))
-				.isInstanceOf(ListFilesRotator.class);
+				TestUtils.getPropertyValue(this.factory.getFactory(), "factoryLocator.defaultFactory")).isNotNull();
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class)
+				.size()).isEqualTo(1);
+			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class)
+				.get(0)).isInstanceOf(ListFilesRotator.class);
 		}
 
 	}
 
-	@TestPropertySource(properties = { "sftp.stream = true",
-			"file.consumer.mode = contents",
-			"sftp.factories.one.host=localhost",
-			"sftp.factories.one.port=${sftp.factory.port}",
-			"sftp.factories.one.username = user",
-			"sftp.factories.one.password = pass",
-			"sftp.factories.one.cache-sessions = true",
-			"sftp.factories.one.allowUnknownKeys = true",
-			"sftp.factories.two.host=localhost",
-			"sftp.factories.two.port=${sftp.factory.port}",
-			"sftp.factories.two.username = user",
-			"sftp.factories.two.password = pass",
-			"sftp.factories.two.cache-sessions = true",
-			"sftp.factories.two.allowUnknownKeys = true",
-			"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource",
-			"sftp.max-fetch=1",
-			"sftp.fair=true"
-		})
+	@TestPropertySource(properties = { "sftp.stream = true", "file.consumer.mode = contents",
+		"sftp.factories.one.host=localhost", "sftp.factories.one.port=${sftp.factory.port}",
+		"sftp.factories.one.username = user", "sftp.factories.one.password = pass",
+		"sftp.factories.one.cache-sessions = true", "sftp.factories.one.allowUnknownKeys = true",
+		"sftp.factories.two.host=localhost", "sftp.factories.two.port=${sftp.factory.port}",
+		"sftp.factories.two.username = user", "sftp.factories.two.password = pass",
+		"sftp.factories.two.cache-sessions = true", "sftp.factories.two.allowUnknownKeys = true",
+		"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource", "sftp.max-fetch=1", "sftp.fair=true" })
 	public static class MultiSourceStreamTests extends SftpSourceIntegrationTests {
 
 		@BeforeClass
@@ -410,16 +351,14 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		@Test
 		public void streamContentsSource3ComesSecond() throws InterruptedException {
 			assertEquals(1,
-					TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size());
+				TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size());
 			for (int i = 1; i <= 3; i++) {
-				@SuppressWarnings("unchecked")
-				Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(sftpSource.output())
-						.poll(10, TimeUnit.SECONDS);
+				@SuppressWarnings("unchecked") Message<byte[]> received = (Message<byte[]>) this.messageCollector.forChannel(
+					sftpSource.output()).poll(10, TimeUnit.SECONDS);
 				assertNotNull((i - 1) + " files were received, expected 3", received);
 
-				assertThat(new String(received.getPayload()), (i==2) ?
-						equalTo("source3") :
-						isOneOf("source1", "source2"));
+				assertThat(new String(received.getPayload()),
+					(i == 2) ? equalTo("source3") : isOneOf("source1", "source2"));
 			}
 			int n = 0;
 			while (n++ < 100 && getSourceRemoteDirectory().list().length > 0) {
@@ -431,15 +370,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	@SpringBootApplication
 	public static class SftpSourceApplication {
-
-		//TODO: Simplify after SCSt MessageConverter fixes
-		@Bean
-		Function<Message<byte[]>, Message<byte[]>> upper() {
-			return m -> MessageBuilder.fromMessage(m)
-				.withPayload(new String(m.getPayload()).toUpperCase().getBytes())
-				.copyHeaders(m.getHeaders())
-				.build();
-		}
 	}
 
 }

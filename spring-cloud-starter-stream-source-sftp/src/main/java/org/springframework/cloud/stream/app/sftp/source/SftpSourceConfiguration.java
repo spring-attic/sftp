@@ -84,9 +84,10 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class })
+@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class,
+	TriggerPropertiesMaxMessagesDefaultUnlimited.class })
 @Import({ TriggerConfiguration.class, SftpSourceSessionFactoryConfiguration.class,
-	TriggerPropertiesMaxMessagesDefaultUnlimited.class, SftpSourceIdempotentReceiverConfiguration.class,
+	SftpSourceIdempotentReceiverConfiguration.class,
 	SftpSourceTaskLauncherConfiguration.class })
 public class SftpSourceConfiguration {
 
@@ -97,7 +98,7 @@ public class SftpSourceConfiguration {
 	@Autowired
 	private Source source;
 
-	@Autowired(required = false)
+	@Autowired
 	private SftpRemoteFileTemplate sftpTemplate;
 
 	@Autowired
