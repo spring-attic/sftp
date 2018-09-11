@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author David Turanski
  **/
-@SpringBootTest
+@SpringBootTest(properties = {"sftp.transfer-to=S3","spring.cloud.stream.function.definition=transfer"})
 @RunWith(SpringRunner.class)
 public abstract class SftpDownloaderS3Tests {
 

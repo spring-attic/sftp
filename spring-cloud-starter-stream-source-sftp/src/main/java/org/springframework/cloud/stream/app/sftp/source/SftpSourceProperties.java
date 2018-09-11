@@ -43,7 +43,8 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp")
 @Validated
 public class SftpSourceProperties {
-	public enum TaskLaunchRequestType {DATAFLOW, STANDALONE, NONE};
+	public enum TaskLaunchRequestType {DATAFLOW, STANDALONE, NONE}
+
 	public enum TransferType {LOCAL,CF_VOLUME,S3}
 
 	/**
@@ -75,11 +76,6 @@ public class SftpSourceProperties {
 	 * The local directory (or target location) to use for file transfers.
 	 */
 	private File localDir = new File(System.getProperty("java.io.tmpdir"), "sftp-source");
-
-	/**
-	 * The target storage to use for the file transfer (LOCAL, CF_VOLUME, S3) default is `LOCAL`
-	 */
-	private TransferType transferTo = TransferType.LOCAL;
 
 	/**
 	 * Set to true to create the local directory if it does not exist.
@@ -187,14 +183,6 @@ public class SftpSourceProperties {
 
 	public final void setLocalDir(File localDir) {
 		this.localDir = localDir;
-	}
-
-	public TransferType getTransferTo() {
-		return transferTo;
-	}
-
-	public void setTransferTo(TransferType transferTo) {
-		this.transferTo = transferTo;
 	}
 
 	public String getFilenamePattern() {

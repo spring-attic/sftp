@@ -17,6 +17,7 @@
 package org.springframework.cloud.stream.app.sftp.source.downloader.cf.volume.services;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileInputStreamPersister;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamPersister;
 
@@ -24,6 +25,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnCloudPlatform;
 import org.springframework.boot.cloud.CloudPlatform;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpSourceDowloaderProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -36,6 +38,7 @@ import org.springframework.lang.Nullable;
  **/
 @Configuration
 @ConditionalOnCloudPlatform(CloudPlatform.CLOUD_FOUNDRY)
+@EnableConfigurationProperties(SftpSourceDowloaderProperties.class)
 @ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "CF_VOLUME")
 public class NFSInputStreamPersisterAutoConfiguration {
 

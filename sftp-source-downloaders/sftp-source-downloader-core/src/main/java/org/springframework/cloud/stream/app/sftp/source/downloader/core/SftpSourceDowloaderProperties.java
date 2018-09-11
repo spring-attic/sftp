@@ -16,9 +16,26 @@
 
 package org.springframework.cloud.stream.app.sftp.source.downloader.core;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
 /**
  * @author David Turanski
  **/
-public class SftpTransferProperties {
-	public enum Target {LOCAL, NFS, S3}
+@ConfigurationProperties(prefix = "sftp")
+public class SftpSourceDowloaderProperties {
+
+	public enum TransferType {LOCAL,CF_VOLUME,S3}
+
+	/**
+	 * The target storage to use for the file transfer (LOCAL, CF_VOLUME, S3) default is `LOCAL`
+	 */
+	private TransferType transferTo = TransferType.LOCAL;
+
+	public TransferType getTransferTo() {
+		return transferTo;
+	}
+
+	public void setTransferTo(TransferType transferTo) {
+		this.transferTo = transferTo;
+	}
 }

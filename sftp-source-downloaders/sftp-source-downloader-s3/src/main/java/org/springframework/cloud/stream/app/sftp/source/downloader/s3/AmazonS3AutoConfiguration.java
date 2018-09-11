@@ -26,6 +26,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpSourceDowloaderProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -34,12 +35,12 @@ import org.springframework.context.annotation.Profile;
  * @author David Turanski
  **/
 @Configuration
-@ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "S3")
-@EnableConfigurationProperties(AmazonS3ConfigurationProperties.class)
+@EnableConfigurationProperties({AmazonS3ConfigurationProperties.class, SftpSourceDowloaderProperties.class})
 public class AmazonS3AutoConfiguration {
 
 	@Configuration
 	@Profile("!cloud")
+	@ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "S3")
 	static class StandardAmazonS3AutoConfiguration {
 		@Bean
 		public AmazonS3 amazonS3(AmazonS3ConfigurationProperties properties) {

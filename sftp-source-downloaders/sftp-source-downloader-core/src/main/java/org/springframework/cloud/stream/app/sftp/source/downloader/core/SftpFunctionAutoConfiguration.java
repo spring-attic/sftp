@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,30 +35,31 @@ import org.springframework.util.Assert;
  * @author David Turanski
  */
 @Configuration
+@ConditionalOnExpression("'${spring.cloud.stream.function.definition:}'.contains('transfer') or "
+	+ "'${spring.cloud.stream.function.after.definition:}'.contains('transfer')")
 public class SftpFunctionAutoConfiguration {
 
-
 	@Bean
-	Function<Message, Message> transfer(InputStreamProvider inputStreamProvider,
+	public Function<Message, Message> transfer(InputStreamProvider inputStreamProvider,
 		InputStreamPersister inputStreamPersister) {
-		return  message -> {
+		return message -> {
 			Assert.isTrue(message.getHeaders().containsKey(FileHeaders.REMOTE_FILE),
-				String.format("Missing required message header %s", FileHeaders.REMOTE_FILE ));
+				String.format("Missing required message header %s", FileHeaders.REMOTE_FILE));
 
 			Assert.isTrue(message.getHeaders().containsKey(FileHeaders.FILENAME),
-				String.format("Missing required message header %s", FileHeaders.FILENAME ));
+				String.format("Missing required message header %s", FileHeaders.FILENAME));
 
 			String sourceFile = (String) message.getHeaders().get(FileHeaders.REMOTE_FILE);
-			Assert.hasText(sourceFile,String.format("Message header %s must not be empty.", FileHeaders.REMOTE_FILE));
+			Assert.hasText(sourceFile, String.format("Message header %s must not be empty.", FileHeaders.REMOTE_FILE));
 
 			String targetPath = (String) message.getHeaders().get(FileHeaders.FILENAME);
-			Assert.hasText(sourceFile,String.format("Message header %s must not be empty.", FileHeaders.FILENAME));
+			Assert.hasText(sourceFile, String.format("Message header %s must not be empty.", FileHeaders.FILENAME));
 
 			Map<String, String> metadata = new HashMap<>();
 			metadata.put(FileHeaders.REMOTE_FILE, sourceFile);
 
-			inputStreamPersister.save(new InputStreamTransfer(
-				inputStreamProvider.inputStream(sourceFile), targetPath,metadata));
+			inputStreamPersister.save(
+				new InputStreamTransfer(inputStreamProvider.inputStream(sourceFile), targetPath, metadata));
 
 			return message;
 		};
@@ -67,10 +69,10 @@ public class SftpFunctionAutoConfiguration {
 	@ConditionalOnBean(SftpRemoteFileTemplate.class)
 	@Bean
 	InputStreamProvider ftpInputStreamProvider(SftpRemoteFileTemplate remoteFileTemplate) {
-		return sourceFile ->  {
+		return sourceFile -> {
 
-			Assert.isTrue(remoteFileTemplate.exists(sourceFile),String.format("Source file %s does not exist.",
-				sourceFile));
+			Assert.isTrue(remoteFileTemplate.exists(sourceFile),
+				String.format("Source file %s does not exist.", sourceFile));
 			try {
 
 				return remoteFileTemplate.getSessionFactory().getSession().readRaw(sourceFile);

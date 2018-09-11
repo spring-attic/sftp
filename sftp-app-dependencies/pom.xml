@@ -34,6 +34,21 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud.stream.app</groupId>
+				<artifactId>sftp-source-downloader-local</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud.stream.app</groupId>
+				<artifactId>sftp-source-downloader-s3</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud.stream.app</groupId>
+				<artifactId>sftp-source-downloader-cf-volume-services</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud.stream.app</groupId>
 				<artifactId>app-starters-metadata-store-common</artifactId>
 				<exclusions>
 					<exclusion>

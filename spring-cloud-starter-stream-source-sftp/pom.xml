@@ -53,6 +53,18 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>sftp-source-downloader-local</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>sftp-source-downloader-s3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>sftp-source-downloader-cf-volume-services</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud.stream.app</groupId>
 			<artifactId>sftp-app-starters-test-support</artifactId>
 			<scope>test</scope>
 		</dependency>

@@ -286,23 +286,6 @@
         <artifactId>reactor-core</artifactId>
         <version>${project-reactor.version}</version>
       </dependency>
-
-      <!-- User Function library -->
-      <dependency>
-        <groupId>io.spring.example</groupId>
-        <artifactId>sftp-downloader-local</artifactId>
-        <version>1.0.0.BUILD-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>io.spring.example</groupId>
-        <artifactId>sftp-downloader-nfs</artifactId>
-        <version>1.0.0.BUILD-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>io.spring.example</groupId>
-        <artifactId>sftp-downloader-s3</artifactId>
-        <version>1.0.0.BUILD-SNAPSHOT</version>
-      </dependency>
     </dependencies>
 
   </dependencyManagement>
@@ -330,10 +313,6 @@
     <dependency>
       <groupId>org.springframework.cloud.stream.app</groupId>
       <artifactId>spring-cloud-starter-stream-source-sftp</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.spring.example</groupId>
-      <artifactId>sftp-downloader-nfs</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

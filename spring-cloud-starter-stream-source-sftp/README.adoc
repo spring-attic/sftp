@@ -114,6 +114,12 @@ with the following set as command line arguments (also bound to job parameters f
 The **$$sftp$$** $$source$$ has the following options:
 
 //tag::configuration-properties[]
+$$aws.s3.access-key$$:: $$The S3 access key.$$ *($$String$$, default: `$$<none>$$`)*
+$$aws.s3.bucket$$:: $$The S3 Bucket name.$$ *($$String$$, default: `$$<none>$$`)*
+$$aws.s3.create-bucket$$:: $$Flag to create the bucket if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
+$$aws.s3.endpoint$$:: $$The S3 endpoint.$$ *($$URI$$, default: `$$<none>$$`)*
+$$aws.s3.region$$:: $$The S3 Region (defaults to us-east-1, ignored by minio).$$ *($$Regions$$, default: `$$<none>$$`, possible values: `GovCloud`,`US_EAST_1`,`US_EAST_2`,`US_WEST_1`,`US_WEST_2`,`EU_WEST_1`,`EU_WEST_2`,`EU_WEST_3`,`EU_CENTRAL_1`,`AP_SOUTH_1`,`AP_SOUTHEAST_1`,`AP_SOUTHEAST_2`,`AP_NORTHEAST_1`,`AP_NORTHEAST_2`,`SA_EAST_1`,`CN_NORTH_1`,`CN_NORTHWEST_1`,`CA_CENTRAL_1`)*
+$$aws.s3.secret-key$$:: $$The S3 secret key.$$ *($$String$$, default: `$$<none>$$`)*
 $$file.consumer.markers-json$$:: $$When 'fileMarkers == true', specify if they should be produced as FileSplitter.FileMarker objects or JSON.$$ *($$Boolean$$, default: `$$true$$`)*
 $$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources. Values are 'ref' - The File object, 'lines' - a message per line, or 'contents' - the contents as bytes.$$ *($$FileReadingMode$$, default: `$$<none>$$`, possible values: `ref`,`lines`,`contents`)*
 $$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data. 	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
@@ -134,7 +140,7 @@ $$sftp.fair$$:: $$True for fair polling of multiple servers/directories.$$ *($$B
 $$sftp.filename-pattern$$:: $$A filter pattern to match the names of files to transfer.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.filename-regex$$:: $$A filter regex pattern to match the names of files to transfer.$$ *($$Pattern$$, default: `$$<none>$$`)*
 $$sftp.list-only$$:: $$Set to true to return file metadata without the entire payload.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
+$$sftp.local-dir$$:: $$The local directory (or target location) to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
 $$sftp.max-fetch$$:: $$The maximum number of remote files to fetch per poll; default unlimited. Does not apply when listing files or building task launch requests.$$ *($$Integer$$, default: `$$<none>$$`)*
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
@@ -152,6 +158,7 @@ $$sftp.task.parameters$$:: $$Comma separated list of optional parameters in key=
 $$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$remoteFilePath$$`)*
 $$sftp.task.resource-uri$$:: $$The URI of the task artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
+$$sftp.transfer-to$$:: $$The target storage to use for the file transfer (LOCAL, CF_VOLUME, S3) default is `LOCAL`$$ *($$TransferType$$, default: `$$<none>$$`, possible values: `LOCAL`,`CF_VOLUME`,`S3`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.fixed-delay$$:: $$Fixed delay for periodic triggers.$$ *($$Integer$$, default: `$$1$$`)*

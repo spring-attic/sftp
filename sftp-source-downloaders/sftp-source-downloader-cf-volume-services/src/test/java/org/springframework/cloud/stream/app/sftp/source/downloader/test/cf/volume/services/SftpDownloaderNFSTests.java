@@ -50,7 +50,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author David Turanski
  **/
-@SpringBootTest(properties = {"nfs.service.name=nfs","sftp.transfer-to=CF_VOLUME"})
+@SpringBootTest(properties = {"nfs.service.name=nfs",
+	"sftp.transfer-to=CF_VOLUME",
+	"spring.cloud.stream.function.definition=transfer"})
 @RunWith(SpringRunner.class)
 public class SftpDownloaderNFSTests {
 

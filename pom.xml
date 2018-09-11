@@ -129,7 +129,6 @@
 				<artifactId>reactor-core</artifactId>
 				<version>${project-reactor.version}</version>
 			</dependency>
-
 		</dependencies>
 	</dependencyManagement>
 	<profiles>
