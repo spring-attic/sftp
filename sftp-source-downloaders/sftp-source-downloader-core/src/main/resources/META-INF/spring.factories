@@ -1,1 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpFunctionAutoConfiguration
+org.springframework.boot.env.EnvironmentPostProcessor=org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpFunctionEnvironmentPostProcessor

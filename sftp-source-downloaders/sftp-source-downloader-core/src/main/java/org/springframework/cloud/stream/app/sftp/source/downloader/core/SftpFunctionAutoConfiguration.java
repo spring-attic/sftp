@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,6 +41,8 @@ import org.springframework.util.Assert;
 @ConditionalOnExpression("'${spring.cloud.stream.function.definition:}'.contains('transfer') or "
 	+ "'${spring.cloud.stream.function.after.definition:}'.contains('transfer')")
 public class SftpFunctionAutoConfiguration {
+
+	private static Log log = LogFactory.getLog(SftpFunctionAutoConfiguration.class);
 
 	@Bean
 	public Function<Message, Message> transfer(InputStreamProvider inputStreamProvider,
@@ -57,6 +62,8 @@ public class SftpFunctionAutoConfiguration {
 
 			Map<String, String> metadata = new HashMap<>();
 			metadata.put(FileHeaders.REMOTE_FILE, sourceFile);
+
+			log.debug(String.format("Using InputStreamPersister %s", inputStreamPersister.getClass().getName()));
 
 			inputStreamPersister.save(
 				new InputStreamTransfer(inputStreamProvider.inputStream(sourceFile), targetPath, metadata));
@@ -83,4 +90,10 @@ public class SftpFunctionAutoConfiguration {
 
 		};
 	}
+
+	@Bean
+	public static SftpFunctionEnvironmentPostProcessor sftpFunctionEnvironmentPostProcessor() {
+		return new SftpFunctionEnvironmentPostProcessor();
+	}
+
 }

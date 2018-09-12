@@ -26,7 +26,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpSourceDowloaderProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -35,7 +34,7 @@ import org.springframework.context.annotation.Profile;
  * @author David Turanski
  **/
 @Configuration
-@EnableConfigurationProperties({AmazonS3ConfigurationProperties.class, SftpSourceDowloaderProperties.class})
+@EnableConfigurationProperties({ AmazonS3ConfigurationProperties.class })
 public class AmazonS3AutoConfiguration {
 
 	@Configuration
@@ -45,14 +44,16 @@ public class AmazonS3AutoConfiguration {
 		@Bean
 		public AmazonS3 amazonS3(AmazonS3ConfigurationProperties properties) {
 
-			AWSCredentials awsCredentials = new BasicAWSCredentials(properties.getAccessKey(), properties.getSecretKey());
+			AWSCredentials awsCredentials = new BasicAWSCredentials(properties.getAccessKey(),
+				properties.getSecretKey());
 
 			ClientConfiguration clientConfiguration = new ClientConfiguration();
 			clientConfiguration.setSignerOverride("AWSS3V4SignerType");
 
 			return AmazonS3ClientBuilder.standard()
-				.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(properties.getEndpoint().toString(),
-					properties.getRegion().name()))
+				.withEndpointConfiguration(
+					new AwsClientBuilder.EndpointConfiguration(properties.getEndpoint().toString(),
+						properties.getRegion().name()))
 				.withClientConfiguration(clientConfiguration)
 				.withPathStyleAccessEnabled(true)
 				.withCredentials(new AWSStaticCredentialsProvider(awsCredentials))

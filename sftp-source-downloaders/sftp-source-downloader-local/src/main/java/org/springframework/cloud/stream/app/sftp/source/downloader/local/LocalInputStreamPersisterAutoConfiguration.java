@@ -17,11 +17,8 @@
 package org.springframework.cloud.stream.app.sftp.source.downloader.local;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileInputStreamPersister;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamPersister;
-
-import org.springframework.cloud.stream.app.sftp.source.downloader.core.SftpSourceDowloaderProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,7 +26,6 @@ import org.springframework.context.annotation.Configuration;
  * @author David Turanski
  **/
 @Configuration
-@EnableConfigurationProperties(SftpSourceDowloaderProperties.class)
 @ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "LOCAL", matchIfMissing = true)
 public class LocalInputStreamPersisterAutoConfiguration {
 

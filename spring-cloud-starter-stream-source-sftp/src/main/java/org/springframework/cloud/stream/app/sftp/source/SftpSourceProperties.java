@@ -78,6 +78,11 @@ public class SftpSourceProperties {
 	private File localDir = new File(System.getProperty("java.io.tmpdir"), "sftp-source");
 
 	/**
+	 * The target storage to use for the file transfer (LOCAL, CF_VOLUME, S3) default is `LOCAL`
+	 */
+	private TransferType transferTo = TransferType.LOCAL;
+
+	/**
 	 * Set to true to create the local directory if it does not exist.
 	 */
 	private boolean autoCreateLocalDir = true;
@@ -183,6 +188,14 @@ public class SftpSourceProperties {
 
 	public final void setLocalDir(File localDir) {
 		this.localDir = localDir;
+	}
+
+	public TransferType getTransferTo() {
+		return transferTo;
+	}
+
+	public void setTransferTo(TransferType transferTo) {
+		this.transferTo = transferTo;
 	}
 
 	public String getFilenamePattern() {
