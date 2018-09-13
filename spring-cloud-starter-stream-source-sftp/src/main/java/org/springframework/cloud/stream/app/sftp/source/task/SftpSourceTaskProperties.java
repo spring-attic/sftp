@@ -23,6 +23,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestProperties;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -31,44 +32,10 @@ import org.springframework.validation.annotation.Validated;
  */
 @Validated
 @ConfigurationProperties("sftp.task")
-public class SftpSourceTaskProperties {
-
+public class SftpSourceTaskProperties extends TaskLaunchRequestProperties {
 	protected static final String DEFAULT_LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
 
 	protected static final String DEFAULT_REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
-
-	/**
-	 * The URI of the task artifact to be applied to the TaskLaunchRequest.
-	 */
-	private String resourceUri = "";
-
-	/**
-	 * The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory
-	 * JDBC datasource url.
-	 */
-	private String dataSourceUrl = "jdbc:h2:tcp://localhost:19092/mem:dataflow";
-
-	/**
-	 * The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"
-	 */
-	private String dataSourceUserName = "sa";
-
-	/**
-	 * The datasource password to be applied to the TaskLaunchRequest.
-	 */
-	private String dataSourcePassword;
-
-	/**
-	 * Comma delimited list of deployment properties to be applied to the
-	 * TaskLaunchRequest.
-	 */
-	private String deploymentProperties;
-
-	/**
-	 * Comma delimited list of environment properties to be applied to the
-	 * TaskLaunchRequest.
-	 */
-	private String environmentProperties;
 
 	/**
 	 * Value to use as the remote file parameter name.
@@ -79,69 +46,6 @@ public class SftpSourceTaskProperties {
 	 * Value to use as the local file parameter name.
 	 */
 	private String localFilePathParameterName = DEFAULT_LOCAL_FILE_PATH_PARAM_NAME;
-
-	/**
-	 * Comma separated list of optional parameters in key=value format.
-	 */
-	private List<String> parameters = new ArrayList<>();
-
-	/**
-	 *
-	 * The task application name (required for DATAFLOW launch request).
-	 */
-	private String applicationName;
-
-
-	@NotNull
-	public String getResourceUri() {
-		return this.resourceUri;
-	}
-
-	public void setResourceUri(String resourceUri) {
-		this.resourceUri = resourceUri;
-	}
-
-	@NotBlank
-	public String getDataSourceUrl() {
-		return this.dataSourceUrl;
-	}
-
-	public void setDataSourceUrl(String dataSourceUrl) {
-		this.dataSourceUrl = dataSourceUrl;
-	}
-
-	@NotBlank
-	public String getDataSourceUserName() {
-		return this.dataSourceUserName;
-	}
-
-	public void setDataSourceUserName(String dataSourceUserName) {
-		this.dataSourceUserName = dataSourceUserName;
-	}
-
-	public String getDataSourcePassword() {
-		return this.dataSourcePassword;
-	}
-
-	public void setDataSourcePassword(String dataSourcePassword) {
-		this.dataSourcePassword = dataSourcePassword;
-	}
-
-	public String getDeploymentProperties() {
-		return this.deploymentProperties;
-	}
-
-	public void setDeploymentProperties(String deploymentProperties) {
-		this.deploymentProperties = deploymentProperties;
-	}
-
-	public String getEnvironmentProperties() {
-		return this.environmentProperties;
-	}
-
-	public void setEnvironmentProperties(String environmentProperties) {
-		this.environmentProperties = environmentProperties;
-	}
 
 	public String getRemoteFilePathParameterName() {
 		return this.remoteFilePathParameterName;
@@ -157,21 +61,5 @@ public class SftpSourceTaskProperties {
 
 	public void setLocalFilePathParameterName(String localFilePathParameterName) {
 		this.localFilePathParameterName = localFilePathParameterName;
-	}
-
-	public List<String> getParameters() {
-		return this.parameters;
-	}
-
-	public void setParameters(List<String> parameters) {
-		this.parameters = parameters;
-	}
-
-	public String getApplicationName() {
-		return applicationName;
-	}
-
-	public void setApplicationName(String applicationName) {
-		this.applicationName = applicationName;
 	}
 }

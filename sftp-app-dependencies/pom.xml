@@ -52,6 +52,12 @@
 				<artifactId>sftp-app-starters-test-support</artifactId>
 				<version>2.0.3.BUILD-SNAPSHOT</version>
 			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud.stream.app</groupId>
+				<artifactId>app-starters-task-launch-request-common</artifactId>
+				<version>2.0.2.BUILD-SNAPSHOT</version>
+			</dependency>
+
 		</dependencies>
 
 	</dependencyManagement>

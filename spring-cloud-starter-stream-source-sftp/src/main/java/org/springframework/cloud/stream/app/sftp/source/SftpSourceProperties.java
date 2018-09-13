@@ -43,9 +43,8 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp")
 @Validated
 public class SftpSourceProperties {
-	public enum TaskLaunchRequestType {DATAFLOW, STANDALONE, NONE}
 
-	public enum TransferType {LOCAL,CF_VOLUME,S3}
+	public enum TransferType {LOCAL,S3, NONE}
 
 	/**
 	 * Session factory properties.
@@ -78,7 +77,7 @@ public class SftpSourceProperties {
 	private File localDir = new File(System.getProperty("java.io.tmpdir"), "sftp-source");
 
 	/**
-	 * The target storage to use for the file transfer (LOCAL, CF_VOLUME, S3) default is `LOCAL`
+	 * The target storage to use for the file transfer (LOCAL, S3, NONE) default is `LOCAL`
 	 */
 	private TransferType transferTo = TransferType.LOCAL;
 
@@ -111,11 +110,6 @@ public class SftpSourceProperties {
 	 * Set to true to return file metadata without the entire payload.
 	 */
 	private boolean listOnly = false;
-
-	/**
-	 * Set to create output suitable for a task launch request. Default is `NONE`
-	 */
-	private TaskLaunchRequestType taskLauncherOutput = TaskLaunchRequestType.NONE;
 
 	/**
 	 * The maximum number of remote files to fetch per poll; default unlimited.
@@ -227,11 +221,6 @@ public class SftpSourceProperties {
 		return !(this.filenamePattern != null && this.filenameRegex != null);
 	}
 
-	@AssertFalse(message = "listOnly and taskLauncherOutput cannot be used at the same time")
-	public boolean isListOnlyOrTaskLauncher() {
-		return listOnly && taskLauncherOutput != TaskLaunchRequestType.NONE;
-	}
-
 	public boolean isStream() {
 		return this.stream;
 	}
@@ -242,14 +231,6 @@ public class SftpSourceProperties {
 
 	public Factory getFactory() {
 		return this.factory;
-	}
-
-	public TaskLaunchRequestType getTaskLauncherOutput() {
-		return taskLauncherOutput;
-	}
-
-	public void setTaskLauncherOutput(TaskLaunchRequestType taskLauncherOutput) {
-		this.taskLauncherOutput = taskLauncherOutput;
 	}
 
 	public boolean isListOnly() {

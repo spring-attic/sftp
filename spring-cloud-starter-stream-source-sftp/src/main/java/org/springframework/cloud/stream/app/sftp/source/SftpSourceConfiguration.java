@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.app.sftp.source;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
 import org.aopalliance.aop.Advice;
@@ -36,10 +35,15 @@ import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.LocalDirectoryResolver;
 import org.springframework.cloud.stream.app.file.remote.FilePathUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.TaskLaunchRequestType;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
-import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
+import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
+import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpTaskLauncherChannelInterceptor;
+import org.springframework.cloud.stream.app.tasklaunchrequest.DefaultTaskLaunchRequestMetadata;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestProperties;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestType;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTypeProvider;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLauncherRequestConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
 import org.springframework.cloud.stream.messaging.Source;
@@ -70,10 +74,10 @@ import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
 import org.springframework.integration.transaction.DefaultTransactionSynchronizationFactory;
 import org.springframework.integration.transaction.PseudoTransactionManager;
 import org.springframework.integration.transaction.TransactionSynchronizationProcessor;
-import org.springframework.integration.transformer.GenericTransformer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
@@ -90,9 +94,9 @@ import org.springframework.util.StringUtils;
  */
 @EnableBinding(Source.class)
 @EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class,
-	TriggerPropertiesMaxMessagesDefaultUnlimited.class })
+	TriggerPropertiesMaxMessagesDefaultUnlimited.class, SftpSourceTaskProperties.class })
 @Import({ TriggerConfiguration.class, SftpSourceSessionFactoryConfiguration.class,
-	SftpSourceIdempotentReceiverConfiguration.class, SftpSourceTaskLauncherConfiguration.class })
+	SftpSourceIdempotentReceiverConfiguration.class, TaskLauncherRequestConfiguration.class })
 public class SftpSourceConfiguration {
 
 	@Autowired
@@ -109,6 +113,9 @@ public class SftpSourceConfiguration {
 	private SftpSourceProperties properties;
 
 	@Autowired
+	private SftpSourceTaskProperties taskProperties;
+
+	@Autowired
 	private ConcurrentMetadataStore metadataStore;
 
 	@Autowired(required = false)
@@ -123,18 +130,29 @@ public class SftpSourceConfiguration {
 	@Autowired
 	private LocalDirectoryResolver localDirectoryResolver;
 
+	@Autowired
+	private TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider;
+
 	@Bean
 	LocalDirectoryResolver localDirectoryResolver() {
 		return new LocalDirectoryResolver();
 	}
 
 	@Bean
-	public MessageChannel sftpFileListChannel() {
-		return new DirectChannel();
+	public DefaultTaskLaunchRequestMetadata taskLaunchRequestMetadata() {
+		return new DefaultTaskLaunchRequestMetadata();
 	}
 
 	@Bean
-	public MessageChannel sftpFileTaskLaunchChannel() {
+	public ChannelInterceptor taskLaunchRequestInterceptor(DefaultTaskLaunchRequestMetadata taskLaunchRequestMetadata,
+		SftpSourceTaskProperties taskLaunchRequestProperties, SftpSourceProperties sourceProperties,
+		LocalDirectoryResolver localDirectoryResolver, TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider) {
+		return new SftpTaskLauncherChannelInterceptor(taskLaunchRequestMetadata, taskLaunchRequestProperties,
+			sourceProperties, localDirectoryResolver,taskLaunchRequestTypeProvider);
+	}
+
+	@Bean
+	public MessageChannel sftpFileListChannel() {
 		return new DirectChannel();
 	}
 
@@ -168,11 +186,12 @@ public class SftpSourceConfiguration {
 					consumerSpec(this.fileSourceRotator)), fileConsumerProperties);
 		}
 
-		else if (properties.isListOnly()
-			|| properties.getTaskLauncherOutput() != SftpSourceProperties.TaskLaunchRequestType.NONE) {
+		else if (properties.isListOnly() || properties.getTransferTo() == SftpSourceProperties.TransferType.NONE) {
 			return listingFlow(sftpSessionFactory);
 		}
+
 		else {
+			//Save to local file system
 			SftpInboundChannelAdapterSpec messageSourceBuilder = Sftp.inboundAdapter(
 				this.properties.isMultiSource() ? this.delegatingSessionFactory.getFactory() : sftpSessionFactory)
 				.preserveTimestamp(this.properties.isPreserveTimestamp())
@@ -214,7 +233,7 @@ public class SftpSourceConfiguration {
 				"payload").options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
 			.split()
 			.transform(addFileHeaders())
-			.channel(listOrLaunchChannel())
+			.channel(listOrOutputChannel())
 			.get();
 	}
 
@@ -224,13 +243,13 @@ public class SftpSourceConfiguration {
 			.handle(Sftp.outboundGateway(this.delegatingSessionFactory.getFactory(),
 				AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
 				.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()));
-		if (this.properties.getTaskLauncherOutput() != TaskLaunchRequestType.NONE) {
+		if (this.taskLaunchRequestTypeProvider.taskLaunchRequestType() != TaskLaunchRequestType.NONE) {
 			flow.enrichHeaders(this.listFilesRotator.headers());
 		}
 		return flow.handle(this.listFilesRotator, "clearKey")
 			.split()
 			.transform(addFileHeaders())
-			.channel(listOrLaunchChannel())
+			.channel(listOrOutputChannel())
 			.get();
 	}
 
@@ -242,8 +261,8 @@ public class SftpSourceConfiguration {
 			.build();
 	}
 
-	private MessageChannel listOrLaunchChannel() {
-		return this.properties.isListOnly() ? sftpFileListChannel() : sftpFileTaskLaunchChannel();
+	private MessageChannel listOrOutputChannel() {
+		return this.properties.isListOnly() ? sftpFileListChannel() : source.output();
 	}
 
 	private Consumer<SourcePollingChannelAdapterSpec> consumerSpec(Advice advice) {
