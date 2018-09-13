@@ -34,7 +34,6 @@ import org.springframework.context.annotation.Configuration;
 public class S3InputStreamPersisterAutoConfiguration {
 	@Bean
 	public InputStreamPersister s3InputStreamPersister(AmazonS3 amazonS3, AmazonS3ConfigurationProperties properties) {
-
 		return new S3InputStreamPersister(amazonS3, properties.getBucket(), properties.isCreateBucket());
 	}
 }

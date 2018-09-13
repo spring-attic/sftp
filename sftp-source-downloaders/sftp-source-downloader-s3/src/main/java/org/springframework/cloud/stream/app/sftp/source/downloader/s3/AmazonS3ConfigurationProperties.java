@@ -20,12 +20,14 @@ import java.net.URI;
 
 import com.amazonaws.regions.Regions;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author David Turanski
  **/
 @ConfigurationProperties("aws.s3")
+@ConditionalOnProperty(value = "sftp.transfer-to", havingValue = "S3")
 public class AmazonS3ConfigurationProperties {
 
 	/**

@@ -20,11 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import com.amazonaws.services.s3.AmazonS3;
-import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamProvider;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,6 +29,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileTransferService;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.integration.file.FileHeaders;
@@ -48,12 +47,12 @@ import static org.mockito.Mockito.when;
 /**
  * @author David Turanski
  **/
-@SpringBootTest(properties = {"sftp.transfer-to=S3","spring.cloud.stream.function.definition=transfer"})
+@SpringBootTest(properties = { "sftp.transfer-to=S3", "debug=true" })
 @RunWith(SpringRunner.class)
 public abstract class SftpDownloaderS3Tests {
 
 	@Autowired
-	protected Function<Message, Message> transfer;
+	protected FileTransferService transfer;
 
 	@MockBean
 	protected AmazonS3 s3;
@@ -65,17 +64,16 @@ public abstract class SftpDownloaderS3Tests {
 
 			when(s3.doesBucketExistV2("test")).thenReturn(false);
 
-
 			Map<String, String> metadata = new HashMap();
 
 			metadata.put("source", "source.txt");
 			metadata.put("content-type", "text/plain");
 
 			Message message = MessageBuilder.withPayload("foo")
-				.setHeader(FileHeaders.REMOTE_FILE,"source.txt")
-				.setHeader(FileHeaders.FILENAME,"foo/docs/source.txt")
+				.setHeader(FileHeaders.REMOTE_FILE, "source.txt")
+				.setHeader(FileHeaders.FILENAME, "foo/docs/source.txt")
 				.build();
-			assertThat(transfer.apply(message)).isSameAs(message);
+			assertThat(transfer.transfer(message)).isSameAs(message);
 
 			verify(s3, times(1)).createBucket("test");
 		}

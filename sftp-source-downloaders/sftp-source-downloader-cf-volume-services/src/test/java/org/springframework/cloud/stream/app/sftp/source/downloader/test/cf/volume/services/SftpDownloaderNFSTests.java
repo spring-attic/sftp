@@ -21,9 +21,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.function.Function;
 
-import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamProvider;
 import org.apache.commons.io.IOUtils;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -35,6 +33,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileTransferService;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.PropertySource;
@@ -50,9 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author David Turanski
  **/
-@SpringBootTest(properties = {"nfs.service.name=nfs",
-	"sftp.transfer-to=CF_VOLUME",
-	"spring.cloud.stream.function.definition=transfer"})
+@SpringBootTest(properties = { "nfs.service.name=nfs", "sftp.transfer-to=CF_VOLUME" })
 @RunWith(SpringRunner.class)
 public class SftpDownloaderNFSTests {
 
@@ -60,7 +58,7 @@ public class SftpDownloaderNFSTests {
 	public static final TemporaryFolder localTemporaryFolder = new TemporaryFolder();
 
 	@Autowired
-	private Function<Message, Message> transfer;
+	private FileTransferService transfer;
 
 	@Test
 	public void functionConfiguredAndImplemented() throws IOException {
@@ -73,7 +71,7 @@ public class SftpDownloaderNFSTests {
 			.setHeader(FileHeaders.REMOTE_FILE, "source.txt")
 			.setHeader(FileHeaders.FILENAME, target)
 			.build();
-		assertThat(transfer.apply(message)).isSameAs(message);
+		assertThat(transfer.transfer(message)).isSameAs(message);
 		assertThat(Files.exists(Paths.get(localTemporaryFolder.getRoot().getAbsolutePath(), target))).isTrue();
 
 		assertThat(Files.readAllBytes(Paths.get(localTemporaryFolder.getRoot().getAbsolutePath(), target))).isEqualTo(

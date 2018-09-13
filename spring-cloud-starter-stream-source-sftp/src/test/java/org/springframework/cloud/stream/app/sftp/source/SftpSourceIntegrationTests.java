@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.app.file.LocalDirectoryResolver;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
@@ -61,6 +62,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author David Turanski
@@ -141,6 +143,9 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		@Autowired
 		SftpRemoteFileTemplate template;
 
+		@Autowired
+		LocalDirectoryResolver localDirectoryResolver;
+
 		@Test
 		public void sourceFilesAsRef() throws Exception {
 			assertNull(this.streamingSource);
@@ -166,6 +171,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			assertThat(received.getPayload(), instanceOf(String.class));
 			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE), equalTo(MimeTypeUtils.TEXT_PLAIN));
 			assertThat(received.getPayload(), equalTo(config.getLocalDir() + File.separator + "sftpSource1.txt"));
+			assertTrue(localDirectoryResolver.resolve(config.getLocalDir() + File.separator + "sftpSource1.txt")
+					.exists());
 		}
 
 	}

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.function.Function;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
@@ -31,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.app.sftp.source.downloader.core.FileTransferService;
 import org.springframework.cloud.stream.app.sftp.source.downloader.core.InputStreamProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author David Turanski
  **/
-@SpringBootTest(properties = {"sftp.transfer-to=LOCAL","spring.cloud.stream.function.definition=transfer"})
+@SpringBootTest(properties = {"sftp.transfer-to=LOCAL"})
 @RunWith(SpringRunner.class)
 public class SftpDownloaderLocalTests {
 
@@ -52,7 +52,7 @@ public class SftpDownloaderLocalTests {
 	public final TemporaryFolder localTemporaryFolder = new TemporaryFolder();
 
 	@Autowired
-	private Function<Message, Message> transfer;
+	private FileTransferService transfer;
 
 	@Autowired
 	private InputStreamProvider inputStreamProvider;
@@ -70,7 +70,7 @@ public class SftpDownloaderLocalTests {
 			.setHeader(FileHeaders.FILENAME, target)
 			.build();
 
-		assertThat(transfer.apply(message)).isSameAs(message);
+		assertThat(transfer.transfer(message)).isSameAs(message);
 
 		assertThat(Files.exists(Paths.get(target))).isTrue();
 
