@@ -19,6 +19,27 @@ When configuring the `sftp.factory.known-hosts-expression` option, the root obje
 
 See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
 
+
+
+[NOTE]
+This app is designed to work with CloundFoundry(2.3+) Volume Services. The app will be automatically configured to use
+CloundFoundry Volume Services when running in CloudFoundy with the `nfs` service enabled and bound.  If using
+CloudFoundry volume services, `local-dir` is always interpreted as relative to the bound nfs service instance's mount
+point. The default `local-dir`, something like `Paths.get(System("java.io.tmpdir"),"sftp-source")` This will work
+fine for downstream apps that are also bound to nfs and consume the path in the message payload, but may be inconvenient
+for external access. The assumption is if the service is present, the intention is to use it. For non-container environments,
+relative and absolute paths work as expected. If `list-only=true` or `stream=true` the remote file will not be downloaded in any case.
+
+[NOTE]
+In contrast to previous versions which support task launch requests, this app uses spring-cloud-stream function
+support and built-in functions `standaloneTaskLaunchRequest` and `dataflowTaskLaunchRequest` to optionally transform
+the output payload to use as input to one of the standard `task-launcher` sinks. This feature is enabled by setting
+the `spring.cloud.stream.function.definition` property to include one of the above function names. It is recommended
+to set `list-only=false` and `file-mode=ref` (the defaults) when using this feature. In this case, the remote file
+will be downloaded to the `local-dir`, which can also by an NFS mounted directory. If `list-only=true`, the task
+launch request will include sftp connection parameters and the remote path, and the task will be responsible for
+downloading the file.
+
 == Input
 
 N/A (Fetches files from an SFTP server).
@@ -83,9 +104,9 @@ with the following set as command line arguments (also bound to job parameters f
 * `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
 *  Any provided`task.parameters`
 
-`task.resource-uri` is required.
-`task.deployment-properties` and `task.environment-properties` are optional.
-`task.application-name` is ignored and will be generated.
+* `task.resource-uri` is required.
+* `task.deployment-properties` and `task.environment-properties` are optional.
+* `task.application-name` is ignored and will be generated.
 
 === spring.cloud.stream.function.definition=dataflowTaskLaunchRequest
 
@@ -104,10 +125,10 @@ with the following set as command line arguments (also bound to job parameters f
 * `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
 *  Any provided`task.parameters`
 
-`task.resource-uri` is ignored (already registered in Data Flow Server).
-`task.environment-properties` is ignored (configured is Data Flow Server).
-`task.deployment-properties` is optional.
-`task.application-name` is required (the Data Flow Task Name).
+* `task.resource-uri` is ignored (already registered in Data Flow Server).
+* `task.environment-properties` is ignored (configured is Data Flow Server).
+* `task.deployment-properties` is optional.
+* `task.application-name` is required (the Data Flow Task Name).
 
 == Options
 
