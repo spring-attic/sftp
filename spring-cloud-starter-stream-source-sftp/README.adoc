@@ -86,34 +86,36 @@ None.
 
 ==== Payload:
 
-A `java.io.File` object.
+A `java.io.File` object, byte stream, or file contents.
 
 === spring.cloud.stream.function.definition=standaloneTaskLaunchRequest
 
 ==== Headers:
 
 * `Content-Type: application/json`
-* `file_remoteDirectory: <java.lang.String>`
 
 ==== Payload:
 
 A https://docs.spring.io/spring-cloud-task/docs/current/apidocs/org/springframework/cloud/task/launcher/TaskLaunchRequest.html[TaskLaunchRequest] object.
-with the following set as command line arguments (also bound to job parameters for Spring Batch):
+with the following settings:
 
-* `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
-* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
-*  Any provided`task.parameters`
+* command line arguments (also bound to job parameters for Spring Batch):
+** `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
+** `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>` if `list-only=true`
+
+* `task.environment-properties` added to the task system environment
+*  sftp connection parameters added to the task system environment if `list-only=true`
 
 * `task.resource-uri` is required.
 * `task.deployment-properties` and `task.environment-properties` are optional.
 * `task.application-name` is ignored and will be generated.
+
 
 === spring.cloud.stream.function.definition=dataflowTaskLaunchRequest
 
 ==== Headers:
 
 * `Content-Type: application/json`
-* `file_remoteDirectory: <java.lang.String>`
 
 ==== Payload:
 
@@ -122,8 +124,9 @@ A DataFlow Task Launch request as JSON: `{"name":"<task.application-name>", "dep
 with the following set as command line arguments (also bound to job parameters for Spring Batch):
 
 * `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
-* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
-*  Any provided`task.parameters`
+* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>` and sftp connection parameters,
+if `list-only=true`
+*  Any provided `task.parameters`
 
 * `task.resource-uri` is ignored (already registered in Data Flow Server).
 * `task.environment-properties` is ignored (configured is Data Flow Server).
