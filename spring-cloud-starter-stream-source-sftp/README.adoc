@@ -67,7 +67,7 @@ None.
 
 A `java.io.File` object.
 
-=== task-launcher-output = STANDALONE
+=== spring.cloud.stream.function.definition=standaloneTaskLaunchRequest
 
 ==== Headers:
 
@@ -87,7 +87,7 @@ with the following set as command line arguments (also bound to job parameters f
 `task.deployment-properties` and `task.environment-properties` are optional.
 `task.application-name` is ignored and will be generated.
 
-=== task-launcher-output = DATAFLOW
+=== spring.cloud.stream.function.definition=dataflowTaskLaunchRequest
 
 ==== Headers:
 
@@ -114,12 +114,6 @@ with the following set as command line arguments (also bound to job parameters f
 The **$$sftp$$** $$source$$ has the following options:
 
 //tag::configuration-properties[]
-$$aws.s3.access-key$$:: $$The S3 access key.$$ *($$String$$, default: `$$<none>$$`)*
-$$aws.s3.bucket$$:: $$The S3 Bucket name.$$ *($$String$$, default: `$$<none>$$`)*
-$$aws.s3.create-bucket$$:: $$Flag to create the bucket if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
-$$aws.s3.endpoint$$:: $$The S3 endpoint.$$ *($$URI$$, default: `$$<none>$$`)*
-$$aws.s3.region$$:: $$The S3 Region (defaults to us-east-1, ignored by minio).$$ *($$Regions$$, default: `$$<none>$$`, possible values: `GovCloud`,`US_EAST_1`,`US_EAST_2`,`US_WEST_1`,`US_WEST_2`,`EU_WEST_1`,`EU_WEST_2`,`EU_WEST_3`,`EU_CENTRAL_1`,`AP_SOUTH_1`,`AP_SOUTHEAST_1`,`AP_SOUTHEAST_2`,`AP_NORTHEAST_1`,`AP_NORTHEAST_2`,`SA_EAST_1`,`CN_NORTH_1`,`CN_NORTHWEST_1`,`CA_CENTRAL_1`)*
-$$aws.s3.secret-key$$:: $$The S3 secret key.$$ *($$String$$, default: `$$<none>$$`)*
 $$file.consumer.markers-json$$:: $$When 'fileMarkers == true', specify if they should be produced as FileSplitter.FileMarker objects or JSON.$$ *($$Boolean$$, default: `$$true$$`)*
 $$file.consumer.mode$$:: $$The FileReadingMode to use for file reading sources. Values are 'ref' - The File object, 'lines' - a message per line, or 'contents' - the contents as bytes.$$ *($$FileReadingMode$$, default: `$$<none>$$`, possible values: `ref`,`lines`,`contents`)*
 $$file.consumer.with-markers$$:: $$Set to true to emit start of file/end of file marker messages before/after the data. 	Only valid with FileReadingMode 'lines'.$$ *($$Boolean$$, default: `$$<none>$$`)*
@@ -146,19 +140,17 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.task-launcher-output$$:: $$Set to create output suitable for a task launch request. Default is `NONE`$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `DATAFLOW`,`STANDALONE`,`NONE`)*
-$$sftp.task.application-name$$:: $$The task application name (required for DATAFLOW launch request).$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
-$$sftp.task.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
-$$sftp.task.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.environment-properties$$:: $$Comma delimited list of environment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.application-name$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-password$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-url$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-user-name$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.deployment-properties$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.environment-properties$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.local-file-path-parameter-name$$:: $$Value to use as the local file parameter name.$$ *($$String$$, default: `$$localFilePath$$`)*
-$$sftp.task.parameters$$:: $$Comma separated list of optional parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
+$$sftp.task.parameters$$:: $$<documentation missing>$$ *($$List<String>$$, default: `$$<none>$$`)*
 $$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$remoteFilePath$$`)*
-$$sftp.task.resource-uri$$:: $$The URI of the task artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
+$$sftp.task.resource-uri$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
-$$sftp.transfer-to$$:: $$The target storage to use for the file transfer (LOCAL, CF_VOLUME, S3) default is `LOCAL`$$ *($$TransferType$$, default: `$$<none>$$`, possible values: `LOCAL`,`CF_VOLUME`,`S3`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.fixed-delay$$:: $$Fixed delay for periodic triggers.$$ *($$Integer$$, default: `$$1$$`)*

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.stream.app.sftp.source.tasklauncher;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,41 +24,38 @@ import org.springframework.cloud.stream.app.file.remote.FilePathUtils;
 import org.springframework.cloud.stream.app.sftp.source.SftpHeaders;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
-import org.springframework.cloud.stream.app.tasklaunchrequest.DefaultTaskLaunchRequestMetadata;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestContext;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestType;
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTypeProvider;
-import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.integration.config.GlobalChannelInterceptor;
+import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
 /**
+ * Provide {@link org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestContext}, specific to
+ * SFTP. as a message header.
+ *
  * @author David Turanski
  **/
 
-@GlobalChannelInterceptor(patterns = Source.OUTPUT)
-public class SftpTaskLauncherChannelInterceptor implements ChannelInterceptor {
-	private final static Log log = LogFactory.getLog(SftpTaskLauncherChannelInterceptor.class);
+public class SftpTaskLauncherRequestContextProvider implements MessageProcessor<Message> {
+	private final static Log log = LogFactory.getLog(SftpTaskLauncherRequestContextProvider.class);
 
-	private final DefaultTaskLaunchRequestMetadata taskLauncherRequestMetadata;
 	private final SftpSourceTaskProperties taskLaunchRequestProperties;
 	private final SftpSourceProperties sourceProperties;
 	private final LocalDirectoryResolver localDirectoryResolver;
 	private final TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider;
 
-	public SftpTaskLauncherChannelInterceptor(DefaultTaskLaunchRequestMetadata taskLaunchRequestMetadata,
+	public SftpTaskLauncherRequestContextProvider(
 		SftpSourceTaskProperties taskLaunchRequestProperties, SftpSourceProperties sourceProperties,
 		LocalDirectoryResolver localDirectoryResolver, TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider) {
 
-		Assert.notNull(taskLaunchRequestMetadata, "'taskLaunchRequestMetadata' is required");
 		Assert.notNull(taskLaunchRequestProperties, "'taskLaunchRequestProperties' is required");
 		Assert.notNull(sourceProperties, "'sourceProperties' is required");
 		Assert.notNull(localDirectoryResolver, "'localDirectoryResolver' is required");
 		Assert.notNull(taskLaunchRequestTypeProvider, "'taskLaunchRequestTypeProvider' is required");
 
-		this.taskLauncherRequestMetadata = taskLaunchRequestMetadata;
 		this.taskLaunchRequestProperties = taskLaunchRequestProperties;
 		this.sourceProperties = sourceProperties;
 		this.localDirectoryResolver = localDirectoryResolver;
@@ -68,30 +63,36 @@ public class SftpTaskLauncherChannelInterceptor implements ChannelInterceptor {
 	}
 
 	@Override
-	public Message<?> preSend(Message<?> message, MessageChannel channel) {
+	public Message<?> processMessage(Message<?> message) {
+		if (taskLaunchRequestTypeProvider.taskLaunchRequestType() == TaskLaunchRequestType.NONE) {
+			return message;
+		}
+
+		log.debug(String.format("Preparing context for a %s task launch request", taskLaunchRequestTypeProvider
+			.taskLaunchRequestType().name()));
+
+		TaskLaunchRequestContext taskLaunchRequestContext = new TaskLaunchRequestContext();
 
 		switch (taskLaunchRequestTypeProvider.taskLaunchRequestType()) {
 		case DATAFLOW:
-			addRemoteFileCommandLineArgs(message);
-			if (sourceProperties.getTransferTo() == SftpSourceProperties.TransferType.NONE) {
-				addSftpConnectionInfoToTaskCommandLineArgs(message);
-				message = adjustMessageHeaders(message);
+			addRemoteFileCommandLineArgs(taskLaunchRequestContext, message);
+			if (sourceProperties.isListOnly()) {
+				addSftpConnectionInfoToTaskCommandLineArgs(taskLaunchRequestContext, message);
+				message = adjustMessageHeaders(taskLaunchRequestContext, message);
 			}
 			else {
-				addLocalFileCommandLineArgs(message);
+				addLocalFileCommandLineArgs(taskLaunchRequestContext, message);
 			}
 			break;
 		case STANDALONE:
-			addRemoteFileCommandLineArgs(message);
-			if (sourceProperties.getTransferTo() == SftpSourceProperties.TransferType.NONE) {
-				addSftpConnectionInfoToTaskEnvironment(message);
-				message = adjustMessageHeaders(message);
+			addRemoteFileCommandLineArgs(taskLaunchRequestContext, message);
+			if (sourceProperties.isListOnly()) {
+				addSftpConnectionInfoToTaskEnvironment(taskLaunchRequestContext, message);
+				message = adjustMessageHeaders(taskLaunchRequestContext, message);
 			}
 			else {
-				addLocalFileCommandLineArgs(message);
+				addLocalFileCommandLineArgs(taskLaunchRequestContext, message);
 			}
-			break;
-		case NONE:
 			break;
 		default:
 			throw new IllegalArgumentException(String.format("unsupported TaskLaunchRequestType %s ",
@@ -101,7 +102,8 @@ public class SftpTaskLauncherChannelInterceptor implements ChannelInterceptor {
 		return message;
 	}
 
-	private void addLocalFileCommandLineArgs(Message<?> message) {
+	private void addLocalFileCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
+		message) {
 
 		String filename = (String) message.getPayload();
 
@@ -112,81 +114,84 @@ public class SftpTaskLauncherChannelInterceptor implements ChannelInterceptor {
 
 		String localFilePathParameterName = taskLaunchRequestProperties.getLocalFilePathParameterName();
 
-		List<String> commandLineArgs = taskLauncherRequestMetadata.getCommandLineArgs();
-		commandLineArgs.add(localFilePathParameterName + "=" + localFilePath);
+		taskLaunchRequestContext.getCommandLineArgs().add(localFilePathParameterName + "=" + localFilePath);
 	}
 
-	private void addRemoteFileCommandLineArgs(Message<?> message) {
-
-		String filename = (String) message.getPayload();
+	private void addRemoteFileCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
+		message) {
 
 		String remoteFilePath = FilePathUtils.getRemoteFilePath(message);
 
 		String remoteFilePathParameterName = taskLaunchRequestProperties.getRemoteFilePathParameterName();
 
-		List<String> commandLineArgs = taskLauncherRequestMetadata.getCommandLineArgs();
-		commandLineArgs.add(remoteFilePathParameterName + "=" + remoteFilePath);
+		taskLaunchRequestContext.getCommandLineArgs().add(remoteFilePathParameterName + "=" + remoteFilePath);
 	}
 
-	private Message<?> adjustMessageHeaders(Message<?> message) {
+	private Message<?> adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
+		message) {
 		return sourceProperties.isMultiSource() ?
 			MessageBuilder.fromMessage(message)
-				.removeHeaders(SftpHeaders.SFTP_HOST_PROPERTY_KEY, SftpHeaders.SFTP_PORT_PROPERTY_KEY,
-					SftpHeaders.SFTP_USERNAME_PROPERTY_KEY, SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
+				.removeHeaders(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
+					SftpHeaders.SFTP_PORT_PROPERTY_KEY,
+					SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
+					SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
 					SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)
+				.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext)
 				.build() :
 			message;
 	}
 
-	private void addSftpConnectionInfoToTaskCommandLineArgs(Message<?> message) {
+	private void addSftpConnectionInfoToTaskCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext,
+		Message<?> message) {
 		if (!this.sourceProperties.isMultiSource()) {
-			taskLauncherRequestMetadata.addCommandLineArg(
+			taskLaunchRequestContext.addCommandLineArg(
 				String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY, sourceProperties.getFactory().getHost()));
-			taskLauncherRequestMetadata.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
+			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
 				sourceProperties.getFactory().getUsername()));
-			taskLauncherRequestMetadata.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
+			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
 				sourceProperties.getFactory().getPassword()));
-			taskLauncherRequestMetadata.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PORT_PROPERTY_KEY,
+			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PORT_PROPERTY_KEY,
 				String.valueOf(sourceProperties.getFactory().getPort())));
 		}
 		else {
-			taskLauncherRequestMetadata.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY,
+			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY,
 				message.getHeaders().get(SftpHeaders.SFTP_HOST_PROPERTY_KEY)));
-			taskLauncherRequestMetadata.addCommandLineArg(
+			taskLaunchRequestContext.addCommandLineArg(
 				String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY, SftpHeaders.SFTP_PORT_PROPERTY_KEY,
 					String.valueOf(message.getHeaders().get(SftpHeaders.SFTP_PORT_PROPERTY_KEY))));
-			taskLauncherRequestMetadata.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
+			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
 				message.getHeaders().get(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY)));
-			taskLauncherRequestMetadata.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
+			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
 				message.getHeaders().get(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY)));
-			taskLauncherRequestMetadata.addCommandLineArg(
+			taskLaunchRequestContext.addCommandLineArg(
 				String.format("%s=%s", SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
 					message.getHeaders().get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
 		}
 	}
 
-	private void addSftpConnectionInfoToTaskEnvironment(Message message) {
+	private void addSftpConnectionInfoToTaskEnvironment(TaskLaunchRequestContext taskLaunchRequestContext,
+		Message message) {
 
 		if (!this.sourceProperties.isMultiSource()) {
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
 				sourceProperties.getFactory().getHost());
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
 				sourceProperties.getFactory().getUsername());
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
 				sourceProperties.getFactory().getPassword());
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_PORT_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PORT_PROPERTY_KEY,
 				String.valueOf(sourceProperties.getFactory().getPort()));
 		}
 		else {
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
 				(String) message.getHeaders().get(SftpHeaders.SFTP_HOST_PROPERTY_KEY));
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_PORT_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PORT_PROPERTY_KEY,
 				String.valueOf(message.getHeaders().get(SftpHeaders.SFTP_PORT_PROPERTY_KEY)));
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
 				(String) message.getHeaders().get(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY));
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
 				(String) message.getHeaders().get(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY));
-			taskLauncherRequestMetadata.addEnvironmentVariable(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
+			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
 				(String) message.getHeaders().get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY));
 		}
 	}

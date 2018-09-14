@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -43,8 +41,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp")
 @Validated
 public class SftpSourceProperties {
-
-	public enum TransferType {LOCAL,S3, NONE}
 
 	/**
 	 * Session factory properties.
@@ -75,11 +71,6 @@ public class SftpSourceProperties {
 	 * The local directory (or target location) to use for file transfers.
 	 */
 	private File localDir = new File(System.getProperty("java.io.tmpdir"), "sftp-source");
-
-	/**
-	 * The target storage to use for the file transfer (LOCAL, S3, NONE) default is `LOCAL`
-	 */
-	private TransferType transferTo = TransferType.LOCAL;
 
 	/**
 	 * Set to true to create the local directory if it does not exist.
@@ -182,14 +173,6 @@ public class SftpSourceProperties {
 
 	public final void setLocalDir(File localDir) {
 		this.localDir = localDir;
-	}
-
-	public TransferType getTransferTo() {
-		return transferTo;
-	}
-
-	public void setTransferTo(TransferType transferTo) {
-		this.transferTo = transferTo;
 	}
 
 	public String getFilenamePattern() {
