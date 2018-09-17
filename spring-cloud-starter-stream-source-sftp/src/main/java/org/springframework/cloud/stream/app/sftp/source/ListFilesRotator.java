@@ -43,7 +43,7 @@ import org.springframework.messaging.Message;
  * @author David Turanski
  * @since 2.0
  */
-class ListFilesRotator extends AbstractMessageSourceAdvice {
+public class ListFilesRotator extends AbstractMessageSourceAdvice {
 
 	private static final Log logger = LogFactory.getLog(ListFilesRotator.class);
 
@@ -61,7 +61,7 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 
 	private volatile KeyDirectory current;
 
-	ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
+	public ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
 		this.properties = properties;
 		this.sessionFactory = factory.getFactory();
 		if (properties.isMultiSource()) {

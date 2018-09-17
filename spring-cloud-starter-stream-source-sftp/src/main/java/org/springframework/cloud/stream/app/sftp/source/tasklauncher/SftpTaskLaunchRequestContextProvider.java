@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.app.file.LocalDirectoryResolver;
 import org.springframework.cloud.stream.app.file.remote.FilePathUtils;
+import org.springframework.cloud.stream.app.sftp.source.ListFilesRotator;
 import org.springframework.cloud.stream.app.sftp.source.SftpHeaders;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
@@ -39,17 +40,19 @@ import org.springframework.util.Assert;
  * @author David Turanski
  **/
 
-public class SftpTaskLauncherRequestContextProvider implements MessageProcessor<Message> {
-	private final static Log log = LogFactory.getLog(SftpTaskLauncherRequestContextProvider.class);
+public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Message> {
+	private final static Log log = LogFactory.getLog(SftpTaskLaunchRequestContextProvider.class);
 
 	private final SftpSourceTaskProperties taskLaunchRequestProperties;
 	private final SftpSourceProperties sourceProperties;
 	private final LocalDirectoryResolver localDirectoryResolver;
 	private final TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider;
+	private final ListFilesRotator listFilesRotator;
 
-	public SftpTaskLauncherRequestContextProvider(
+	public SftpTaskLaunchRequestContextProvider(
 		SftpSourceTaskProperties taskLaunchRequestProperties, SftpSourceProperties sourceProperties,
-		LocalDirectoryResolver localDirectoryResolver, TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider) {
+		LocalDirectoryResolver localDirectoryResolver, TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider,
+		ListFilesRotator listFilesRotator) {
 
 		Assert.notNull(taskLaunchRequestProperties, "'taskLaunchRequestProperties' is required");
 		Assert.notNull(sourceProperties, "'sourceProperties' is required");
@@ -60,6 +63,7 @@ public class SftpTaskLauncherRequestContextProvider implements MessageProcessor<
 		this.sourceProperties = sourceProperties;
 		this.localDirectoryResolver = localDirectoryResolver;
 		this.taskLaunchRequestTypeProvider = taskLaunchRequestTypeProvider;
+		this.listFilesRotator = listFilesRotator;
 	}
 
 	@Override
@@ -70,6 +74,10 @@ public class SftpTaskLauncherRequestContextProvider implements MessageProcessor<
 
 		log.debug(String.format("Preparing context for a %s task launch request", taskLaunchRequestTypeProvider
 			.taskLaunchRequestType().name()));
+
+		if (listFilesRotator != null) {
+			message = MessageBuilder.fromMessage(message).copyHeaders(listFilesRotator.headers()).build();
+		}
 
 		TaskLaunchRequestContext taskLaunchRequestContext = new TaskLaunchRequestContext();
 
@@ -129,16 +137,15 @@ public class SftpTaskLauncherRequestContextProvider implements MessageProcessor<
 
 	private Message<?> adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
 		message) {
-		return sourceProperties.isMultiSource() ?
-			MessageBuilder.fromMessage(message)
-				.removeHeaders(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
-					SftpHeaders.SFTP_PORT_PROPERTY_KEY,
-					SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
-					SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
-					SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)
-				.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext)
-				.build() :
-			message;
+
+		MessageBuilder messageBuilder = MessageBuilder.fromMessage(message)
+			.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext);
+		if (listFilesRotator == null) {
+			messageBuilder
+				.removeHeaders((String[])listFilesRotator.headers().keySet().toArray());
+		}
+
+		return messageBuilder.build();
 	}
 
 	private void addSftpConnectionInfoToTaskCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext,
