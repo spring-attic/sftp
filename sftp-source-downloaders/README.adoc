@@ -1,7 +1,0 @@
-# SFTP Downloaders
-
-Provides a Spring Cloud Function Bean named `transfer` that delegates to one of the following downloaders to stage the file to an interim store for downstream processing:
-
-* local
-* NFS (Cloud Foundry Volume Services)
-* s3

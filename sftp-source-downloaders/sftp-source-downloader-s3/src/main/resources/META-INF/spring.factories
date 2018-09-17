@@ -1,3 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.springframework.cloud.stream.app.sftp.source.downloader.s3.S3InputStreamPersisterAutoConfiguration,\
-    org.springframework.cloud.stream.app.sftp.source.downloader.s3.AmazonS3AutoConfiguration
