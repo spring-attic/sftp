@@ -39,7 +39,6 @@ import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
-import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.hazelcast.metadata.HazelcastMetadataStore;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
@@ -96,8 +95,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	protected final ObjectMapper objectMapper = new ObjectMapper();
 
-	@TestPropertySource(properties = {"file.consumer.mode = ref"
-		/*, "--spring.cloud.stream.function.definition=dataflowTaskLaunchRequest"*/ })
+	@TestPropertySource(properties = { "file.consumer.mode = ref",
+		"sftp.task.task-launcher-ouput=DATAFLOW" })
 	public static class RefTests extends SftpSourceIntegrationTests {
 
 		@Autowired
@@ -134,8 +133,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 			assertNotNull(this.metadataStore.get("sftpSource/sftpSource1.txt"));
 			assertNotNull(this.metadataStore.get("sftpSource/sftpSource2.txt"));
-
-			assertNotNull(received.getHeaders().get(FileHeaders.REMOTE_DIRECTORY));
 		}
 
 	}
@@ -176,7 +173,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE), equalTo(MimeTypeUtils.TEXT_PLAIN));
 			assertThat(received.getPayload(), equalTo(config.getLocalDir() + File.separator + "sftpSource1.txt"));
 			assertTrue(localDirectoryResolver.resolve(config.getLocalDir() + File.separator + "sftpSource1.txt")
-					.exists());
+				.exists());
 		}
 
 	}
@@ -380,7 +377,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	}
 
 	@SpringBootApplication
-	public static class SftpSourceApplication {
+	static class SftpSourceApplication {
 	}
 
 }

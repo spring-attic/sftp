@@ -19,14 +19,15 @@ package org.springframework.cloud.stream.app.sftp.source;
 /**
  * @author David Turanski
  **/
-public abstract class SftpHeaders {
-	public static final String SFTP_HOST_PROPERTY_KEY = "sftp_host";
+public interface SftpHeaders {
+	String SFTP_HOST_PROPERTY_KEY = "sftp_host";
 
-	public static final String SFTP_PORT_PROPERTY_KEY = "sftp_port";
+	String SFTP_PORT_PROPERTY_KEY = "sftp_port";
 
-	public static final String SFTP_USERNAME_PROPERTY_KEY = "sftp_username";
+	String SFTP_USERNAME_PROPERTY_KEY = "sftp_username";
 
-	public static final String SFTP_PASSWORD_PROPERTY_KEY = "sftp_password";
+	String SFTP_PASSWORD_PROPERTY_KEY = "sftp_password";
 
-	public static final String SFTP_SELECTED_SERVER_PROPERTY_KEY = "sftp_selectedServer";
+	String SFTP_SELECTED_SERVER_PROPERTY_KEY = "sftp_selectedServer";
+
 }

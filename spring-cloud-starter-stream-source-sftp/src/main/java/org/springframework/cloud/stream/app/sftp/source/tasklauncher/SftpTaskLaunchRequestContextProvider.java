@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.stream.app.sftp.source.tasklauncher;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,10 +32,12 @@ import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskPrope
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestContext;
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestType;
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTypeProvider;
+import org.springframework.integration.expression.FunctionExpression;
 import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Provide {@link org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestContext}, specific to
@@ -86,7 +92,6 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 			addRemoteFileCommandLineArgs(taskLaunchRequestContext, message);
 			if (sourceProperties.isListOnly()) {
 				addSftpConnectionInfoToTaskCommandLineArgs(taskLaunchRequestContext, message);
-				message = adjustMessageHeaders(taskLaunchRequestContext, message);
 			}
 			else {
 				addLocalFileCommandLineArgs(taskLaunchRequestContext, message);
@@ -96,7 +101,6 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 			addRemoteFileCommandLineArgs(taskLaunchRequestContext, message);
 			if (sourceProperties.isListOnly()) {
 				addSftpConnectionInfoToTaskEnvironment(taskLaunchRequestContext, message);
-				message = adjustMessageHeaders(taskLaunchRequestContext, message);
 			}
 			else {
 				addLocalFileCommandLineArgs(taskLaunchRequestContext, message);
@@ -107,21 +111,26 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 				taskLaunchRequestTypeProvider.taskLaunchRequestType().name()));
 		}
 
-		return message;
+		return adjustMessageHeaders(taskLaunchRequestContext, message);
 	}
 
 	private void addLocalFileCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
 		message) {
 
-		String filename = (String) message.getPayload();
+		String localFilePath;
 
-		String localFilePathParameterValue = localDirectoryResolver.resolve(sourceProperties.getLocalDir().getPath())
-			.getPath();
-
-		String localFilePath = FilePathUtils.getLocalFilePath(localFilePathParameterValue, filename);
+		if (sourceProperties.isListOnly()) {
+			String filename = (String) message.getPayload();
+			localFilePath =
+				FilePathUtils.getLocalFilePath(localDirectoryResolver.resolve(
+					sourceProperties.getLocalDir().getPath()).getPath(),
+					filename);
+		}
+		else {
+			localFilePath = ((File) message.getPayload()).getAbsolutePath();
+		}
 
 		String localFilePathParameterName = taskLaunchRequestProperties.getLocalFilePathParameterName();
-
 		taskLaunchRequestContext.getCommandLineArgs().add(localFilePathParameterName + "=" + localFilePath);
 	}
 
@@ -130,9 +139,10 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 
 		String remoteFilePath = FilePathUtils.getRemoteFilePath(message);
 
-		String remoteFilePathParameterName = taskLaunchRequestProperties.getRemoteFilePathParameterName();
-
-		taskLaunchRequestContext.getCommandLineArgs().add(remoteFilePathParameterName + "=" + remoteFilePath);
+		if (StringUtils.hasText(remoteFilePath)) {
+			String remoteFilePathParameterName = taskLaunchRequestProperties.getRemoteFilePathParameterName();
+			taskLaunchRequestContext.getCommandLineArgs().add(remoteFilePathParameterName + "=" + remoteFilePath);
+		}
 	}
 
 	private Message<?> adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
@@ -140,9 +150,10 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 
 		MessageBuilder messageBuilder = MessageBuilder.fromMessage(message)
 			.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext);
-		if (listFilesRotator == null) {
-			messageBuilder
-				.removeHeaders((String[])listFilesRotator.headers().keySet().toArray());
+		if (listFilesRotator != null) {
+			String[] headerNames = new String[listFilesRotator.headers().size()];
+			messageBuilder.
+				removeHeaders((String[]) listFilesRotator.headers().keySet().toArray(headerNames));
 		}
 
 		return messageBuilder.build();
@@ -161,13 +172,15 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 				String.valueOf(sourceProperties.getFactory().getPort())));
 		}
 		else {
+			Map<String,Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
+
 			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY,
-				message.getHeaders().get(SftpHeaders.SFTP_HOST_PROPERTY_KEY)));
+				headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
 			taskLaunchRequestContext.addCommandLineArg(
-				String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY, SftpHeaders.SFTP_PORT_PROPERTY_KEY,
-					String.valueOf(message.getHeaders().get(SftpHeaders.SFTP_PORT_PROPERTY_KEY))));
+				String.format("%s=%s", SftpHeaders.SFTP_PORT_PROPERTY_KEY,
+					String.valueOf(headers.get(SftpHeaders.SFTP_PORT_PROPERTY_KEY))));
 			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
-				message.getHeaders().get(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY)));
+				headers.get(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY)));
 			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
 				message.getHeaders().get(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY)));
 			taskLaunchRequestContext.addCommandLineArg(
@@ -190,16 +203,23 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 				String.valueOf(sourceProperties.getFactory().getPort()));
 		}
 		else {
+			Map<String,Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
+
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
-				(String) message.getHeaders().get(SftpHeaders.SFTP_HOST_PROPERTY_KEY));
+				(String)headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY));
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PORT_PROPERTY_KEY,
-				String.valueOf(message.getHeaders().get(SftpHeaders.SFTP_PORT_PROPERTY_KEY)));
+				String.valueOf(headers.get(SftpHeaders.SFTP_PORT_PROPERTY_KEY)));
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
-				(String) message.getHeaders().get(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY));
+				(String) headers.get(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY));
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
-				(String) message.getHeaders().get(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY));
-			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
-				(String) message.getHeaders().get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY));
+				(String) headers.get(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY));
 		}
+	}
+
+	private Map<String,Object> convertMultiSourceHeaders(Map<String,Object> headers) {
+		Map<String, Object> result = new HashMap<>();
+		headers.forEach((k,v)-> result.put(k, ((FunctionExpression)v).getValue()));
+		return result;
+
 	}
 }
