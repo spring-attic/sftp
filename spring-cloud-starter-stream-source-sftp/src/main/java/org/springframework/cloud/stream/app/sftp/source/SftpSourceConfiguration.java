@@ -27,7 +27,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.app.file.FileConsumerProperties;
@@ -49,8 +48,6 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -60,6 +57,7 @@ import org.springframework.integration.file.filters.ChainFileListFilter;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.file.remote.gateway.AbstractRemoteFileOutboundGateway;
 import org.springframework.integration.file.remote.session.SessionFactory;
+import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.sftp.dsl.Sftp;
@@ -73,7 +71,6 @@ import org.springframework.integration.transaction.DefaultTransactionSynchroniza
 import org.springframework.integration.transaction.PseudoTransactionManager;
 import org.springframework.integration.transaction.TransactionSynchronizationProcessor;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
@@ -148,12 +145,6 @@ public class SftpSourceConfiguration {
 			sourceProperties, localDirectoryResolver, taskLaunchRequestTypeProvider, listFilesRotator);
 	}
 
-
-	@Bean
-	public MessageChannel sftpFileListChannel() {
-		return new DirectChannel();
-	}
-
 	@Bean
 	public IntegrationFlow sftpInboundFlow(SessionFactory<LsEntry> sftpSessionFactory,
 		FileConsumerProperties fileConsumerProperties) {
@@ -224,14 +215,13 @@ public class SftpSourceConfiguration {
 		return enrichWithTaskLaunchRequestTransformers(builder).channel(Source.OUTPUT).get();
 	}
 
-
 	private IntegrationFlowBuilder singleSourceListingFlowBuilder(SessionFactory<LsEntry> sftpSessionFactory) {
 		return IntegrationFlows.from(() -> this.properties.getRemoteDir(), consumerSpec(this
 			.listFilesRotator))
 			.handle(Sftp.outboundGateway(sftpSessionFactory, AbstractRemoteFileOutboundGateway.Command.LS.getCommand(),
 				"payload").options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
 			.split()
-			.channel(sftpFileListChannel());
+			.transform(transformSftpMessage());
 
 	}
 
@@ -244,7 +234,7 @@ public class SftpSourceConfiguration {
 
 		return flow.handle(this.listFilesRotator, "clearKey")
 			.split()
-			.channel(sftpFileListChannel());
+			.transform(transformSftpMessage());
 	}
 
 	private IntegrationFlowBuilder enrichWithTaskLaunchRequestTransformers(IntegrationFlowBuilder builder) {
@@ -283,26 +273,27 @@ public class SftpSourceConfiguration {
 		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
-	//TODO: This COP doesn't apply since not a bean
-	@ConditionalOnProperty(name = "sftp.listOnly")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileListChannel")
-	public Message transformSftpMessage(Message message) {
-		MessageHeaders messageHeaders = message.getHeaders();
-		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
-		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY), "Remote directory header not found");
+	public MessageProcessor<Message> transformSftpMessage() {
 
-		String fileName = (String) message.getPayload();
-		Assert.hasText(fileName, "Filename in payload cannot be empty");
+		return message -> {
+			MessageHeaders messageHeaders = message.getHeaders();
+			Assert.notNull(messageHeaders, "Cannot transform message with null headers");
+			Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY),
+				"Remote directory header not found");
 
-		String fileDir = (String) messageHeaders.get(FileHeaders.REMOTE_DIRECTORY);
+			String fileName = (String) message.getPayload();
+			Assert.hasText(fileName, "Filename in payload cannot be empty");
 
-		String outboundPayload = fileDir + fileName;
+			String fileDir = (String) messageHeaders.get(FileHeaders.REMOTE_DIRECTORY);
 
-		return MessageBuilder.withPayload(outboundPayload)
-			.copyHeaders(messageHeaders)
-			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-			.build();
+			String outboundPayload = fileDir + fileName;
+
+			return MessageBuilder.withPayload(outboundPayload)
+				.copyHeaders(messageHeaders)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+				.build();
+		};
 	}
 
 	@Bean

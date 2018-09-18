@@ -31,11 +31,10 @@ for external access. The assumption is if the service is present, the intention 
 relative and absolute paths work as expected. If `list-only=true` or `stream=true` the remote file will not be downloaded in any case.
 
 [NOTE]
-In contrast to previous versions which support task launch requests, this app uses spring-cloud-stream function
-support and built-in functions `standaloneTaskLaunchRequest` and `dataflowTaskLaunchRequest` to optionally transform
+This app will optionally transform
 the output payload to use as input to one of the standard `task-launcher` sinks. This feature is enabled by setting
-the `spring.cloud.stream.function.definition` property to include one of the above function names. It is recommended
-to set `list-only=false` and `file-mode=ref` (the defaults) when using this feature. In this case, the remote file
+the `task-launcher-output` property to `DATAFLOW` or `STANDALONE`. It is recommended
+to set `list-only=false` (the default) when using this feature. In this case, the remote file
 will be downloaded to the `local-dir`, which can also by an NFS mounted directory. If `list-only=true`, the task
 launch request will include sftp connection parameters and the remote path, and the task will be responsible for
 downloading the file.
@@ -88,7 +87,7 @@ None.
 
 A `java.io.File` object, byte stream, or file contents.
 
-=== spring.cloud.stream.function.definition=standaloneTaskLaunchRequest
+=== task-launcher-output = STANDALONE
 
 ==== Headers:
 
@@ -111,7 +110,7 @@ with the following settings:
 * `task.application-name` is ignored and will be generated.
 
 
-=== spring.cloud.stream.function.definition=dataflowTaskLaunchRequest
+=== task-launcher-output = DATAFLOW
 
 ==== Headers:
 
@@ -164,16 +163,17 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.task.application-name$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.data-source-password$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.data-source-url$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.data-source-user-name$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.deployment-properties$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.environment-properties$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.application-name$$:: $$The task application name (required for DATAFLOW launch request).$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
+$$sftp.task.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
+$$sftp.task.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.environment-properties$$:: $$Comma delimited list of environment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.local-file-path-parameter-name$$:: $$Value to use as the local file parameter name.$$ *($$String$$, default: `$$localFilePath$$`)*
-$$sftp.task.parameters$$:: $$<documentation missing>$$ *($$List<String>$$, default: `$$<none>$$`)*
+$$sftp.task.parameters$$:: $$Comma separated list of optional parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
 $$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$remoteFilePath$$`)*
-$$sftp.task.resource-uri$$:: $$<documentation missing>$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task.resource-uri$$:: $$The URI of the task artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
+$$sftp.task.task-launcher-output$$:: $$Set to output a task launch request. Default is `NONE`.$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `NONE`,`DATAFLOW`,`STANDALONE`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*

@@ -231,7 +231,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 	}
 
 	@TestPropertySource(properties = { "sftp.listOnly = true", "sftp.factory.host = 127.0.0.1",
-		"sftp.factory.username = user", "sftp.factory.password = pass" })
+		"sftp.factory.username = user", "sftp.factory.password = pass", "logging.level.org.springframework"
+		+ ".integration=DEBUG" })
 	public static class SftpListOnlyGatewayTests extends SftpSourceIntegrationTests {
 
 		@Test
