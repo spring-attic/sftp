@@ -49,23 +49,22 @@ import org.springframework.util.StringUtils;
 public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Message> {
 	private final static Log log = LogFactory.getLog(SftpTaskLaunchRequestContextProvider.class);
 
-	private final SftpSourceTaskProperties taskLaunchRequestProperties;
+	private final SftpSourceTaskProperties sftpSourceTaskProperties;
 	private final SftpSourceProperties sourceProperties;
 	private final LocalDirectoryResolver localDirectoryResolver;
 	private final TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider;
 	private final ListFilesRotator listFilesRotator;
 
 	public SftpTaskLaunchRequestContextProvider(
-		SftpSourceTaskProperties taskLaunchRequestProperties, SftpSourceProperties sourceProperties,
+		SftpSourceTaskProperties sftpSourceTaskProperties, SftpSourceProperties sourceProperties,
 		LocalDirectoryResolver localDirectoryResolver, TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider,
 		ListFilesRotator listFilesRotator) {
-
-		Assert.notNull(taskLaunchRequestProperties, "'taskLaunchRequestProperties' is required");
+		Assert.notNull(sftpSourceTaskProperties, "'sftpSourceTaskProperties' is required");
 		Assert.notNull(sourceProperties, "'sourceProperties' is required");
 		Assert.notNull(localDirectoryResolver, "'localDirectoryResolver' is required");
 		Assert.notNull(taskLaunchRequestTypeProvider, "'taskLaunchRequestTypeProvider' is required");
 
-		this.taskLaunchRequestProperties = taskLaunchRequestProperties;
+		this.sftpSourceTaskProperties = sftpSourceTaskProperties;
 		this.sourceProperties = sourceProperties;
 		this.localDirectoryResolver = localDirectoryResolver;
 		this.taskLaunchRequestTypeProvider = taskLaunchRequestTypeProvider;
@@ -130,7 +129,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 			localFilePath = ((File) message.getPayload()).getAbsolutePath();
 		}
 
-		String localFilePathParameterName = taskLaunchRequestProperties.getLocalFilePathParameterName();
+		String localFilePathParameterName = sftpSourceTaskProperties.getLocalFilePathParameterName();
 		taskLaunchRequestContext.getCommandLineArgs().add(localFilePathParameterName + "=" + localFilePath);
 	}
 
@@ -140,7 +139,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		String remoteFilePath = FilePathUtils.getRemoteFilePath(message);
 
 		if (StringUtils.hasText(remoteFilePath)) {
-			String remoteFilePathParameterName = taskLaunchRequestProperties.getRemoteFilePathParameterName();
+			String remoteFilePathParameterName = sftpSourceTaskProperties.getRemoteFilePathParameterName();
 			taskLaunchRequestContext.getCommandLineArgs().add(remoteFilePathParameterName + "=" + remoteFilePath);
 		}
 	}
@@ -172,7 +171,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 				String.valueOf(sourceProperties.getFactory().getPort())));
 		}
 		else {
-			Map<String,Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
+			Map<String, Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
 
 			taskLaunchRequestContext.addCommandLineArg(String.format("%s=%s", SftpHeaders.SFTP_HOST_PROPERTY_KEY,
 				headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
@@ -203,10 +202,10 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 				String.valueOf(sourceProperties.getFactory().getPort()));
 		}
 		else {
-			Map<String,Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
+			Map<String, Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
 
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,
-				(String)headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY));
+				(String) headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY));
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_PORT_PROPERTY_KEY,
 				String.valueOf(headers.get(SftpHeaders.SFTP_PORT_PROPERTY_KEY)));
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY,
@@ -216,9 +215,9 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		}
 	}
 
-	private Map<String,Object> convertMultiSourceHeaders(Map<String,Object> headers) {
+	private Map<String, Object> convertMultiSourceHeaders(Map<String, Object> headers) {
 		Map<String, Object> result = new HashMap<>();
-		headers.forEach((k,v)-> result.put(k, ((FunctionExpression)v).getValue()));
+		headers.forEach((k, v) -> result.put(k, ((FunctionExpression) v).getValue()));
 		return result;
 
 	}

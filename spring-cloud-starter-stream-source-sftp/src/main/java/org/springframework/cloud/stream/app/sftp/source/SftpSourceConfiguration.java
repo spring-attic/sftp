@@ -150,10 +150,10 @@ public class SftpSourceConfiguration {
 
 	@Bean
 	public SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider(
-		SftpSourceTaskProperties taskLaunchRequestProperties,
+		SftpSourceTaskProperties sftpSourceTaskProperties,
 		SftpSourceProperties sourceProperties, LocalDirectoryResolver localDirectoryResolver,
 		TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider) {
-		return new SftpTaskLaunchRequestContextProvider(taskLaunchRequestProperties,
+		return new SftpTaskLaunchRequestContextProvider(sftpSourceTaskProperties,
 			sourceProperties, localDirectoryResolver, taskLaunchRequestTypeProvider, listFilesRotator);
 	}
 
@@ -210,7 +210,7 @@ public class SftpSourceConfiguration {
 			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.fileSourceRotator));
 
 			if (fileConsumerProperties.getMode() != FileReadingMode.ref && taskLaunchRequestProperties
-				.getTaskLaunchRequest() == TaskLaunchRequestType.NONE) {
+				.getFormat() == TaskLaunchRequestType.NONE) {
 				flowBuilder = FileUtils.enhanceFlowForReadingMode(flowBuilder, fileConsumerProperties);
 			}
 		}

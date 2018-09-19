@@ -97,8 +97,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	protected final ObjectMapper objectMapper = new ObjectMapper();
 
-	@TestPropertySource(properties = { "file.consumer.mode = ref",
-		"sftp.task.task-launcher-ouput=DATAFLOW" })
+	@TestPropertySource(properties = { "file.consumer.mode = ref"})
 	public static class RefTests extends SftpSourceIntegrationTests {
 
 		@Autowired

@@ -85,8 +85,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 	@Test
 	public void simpleDataflowTaskLaunchRequest() throws IOException {
 		args = concatenate(args, new String[] {
-			"--sftp.task.application-name=foo",
-			"--sftp.task.task-launch-request=DATAFLOW" });
+			"--task.launch.request.application-name=foo",
+			"--task.launch.request.format=DATAFLOW" });
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -102,8 +102,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 	@Test
 	public void simpleStandaloneTaskLaunchRequest() throws IOException {
 		args = concatenate(args, new String[] {
-			"--sftp.task.resource-uri=file://foo",
-			"--sftp.task.task-launch-request=STANDALONE" });
+			"---task.launch.request.resource-uri=file://foo",
+			"---task.launch.request.format=STANDALONE" });
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -120,8 +120,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 	public void dataflowTaskLaunchRequestFileAsRef() throws IOException {
 		args = concatenate(args, new String[] {
 			"--file.consumer.mode=ref",
-			"--sftp.task.application-name=foo",
-			"--sftp.task.task-launch-request=DATAFLOW" });
+			"--task.launch.request.application-name=foo",
+			"--task.launch.request.format=DATAFLOW" });
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -141,8 +141,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 	public void standaloneTaskLaunchRequestFileAsRef() throws IOException {
 		args = concatenate(args, new String[] {
 			"--file.consumer.mode=ref",
-			"--sftp.task.resource-uri=file://foo",
-			"--sftp.task.task-launch-request=STANDALONE" });
+			"--task.launch.request.resource-uri=file://foo",
+			"--task.launch.request.format=STANDALONE" });
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -166,8 +166,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 	public void standaloneTaskLaunchRequestFileAsList() throws IOException {
 		args = concatenate(args, new String[] {
 			"--sftp.listOnly=true",
-			"--sftp.task.resource-uri=file://foo",
-			"--sftp.task.task-launch-request=STANDALONE" });
+			"--task.launch.request.resource-uri=file://foo",
+			"--task.launch.request.format=STANDALONE" });
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -191,8 +191,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 	public void dataFlowTaskLaunchRequestFileAsList() throws IOException {
 		args = concatenate(args, new String[] {
 			"--sftp.listOnly=true",
-			"--sftp.task.application-name=foo",
-			"--sftp.task.task-launch-request=DATAFLOW" });
+			"--task.launch.request.application-name=foo",
+			"--task.launch.request.format=DATAFLOW" });
 
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			TestChannelBinderConfiguration.getCompleteConfiguration(
@@ -218,8 +218,8 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 
 		args = concatenate(args, new String[] {
 			"--sftp.listOnly=true",
-			"--sftp.task.resource-uri=file://foo",
-			"--sftp.task.task-launch-request=STANDALONE",
+			"---task.launch.request.resource-uri=file://foo",
+			"--task.launch.request.format=STANDALONE",
 			"--sftp.factories.one.host=localhost",
 			"--sftp.factories.one.port=" + System.getProperty("sftp.factory.port"),
 			"--sftp.factories.one.username = user_one",
