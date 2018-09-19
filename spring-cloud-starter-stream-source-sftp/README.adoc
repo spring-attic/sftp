@@ -173,7 +173,7 @@ $$sftp.task.local-file-path-parameter-name$$:: $$Value to use as the local file 
 $$sftp.task.parameters$$:: $$Comma separated list of optional parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
 $$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$remoteFilePath$$`)*
 $$sftp.task.resource-uri$$:: $$The URI of the task artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
-$$sftp.task.task-launcher-output$$:: $$Set to output a task launch request. Default is `NONE`.$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `NONE`,`DATAFLOW`,`STANDALONE`)*
+$$sftp.task.task-launch-request$$:: $$Set to output a task launch request (STANDALONE, DATAFLOW, NONE) default is `NONE`.$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `NONE`,`DATAFLOW`,`STANDALONE`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*

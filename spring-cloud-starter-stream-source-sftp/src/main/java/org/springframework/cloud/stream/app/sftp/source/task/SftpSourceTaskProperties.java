@@ -79,9 +79,9 @@ public class SftpSourceTaskProperties extends TaskLaunchRequestProperties {
 	private String applicationName;
 
 	/**
-	 * Set to output a task launch request. Default is `NONE`.
+	 * Set to output a task launch request (STANDALONE, DATAFLOW, NONE) default is `NONE`.
 	 */
-	private TaskLaunchRequestType taskLauncherOutput = TaskLaunchRequestType.NONE;
+	private TaskLaunchRequestType taskLaunchRequest = TaskLaunchRequestType.NONE;
 
 	/**
 	 * Value to use as the remote file parameter name.

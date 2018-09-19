@@ -48,6 +48,8 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlowBuilder;
 import org.springframework.integration.dsl.IntegrationFlows;
@@ -57,7 +59,6 @@ import org.springframework.integration.file.filters.ChainFileListFilter;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.file.remote.gateway.AbstractRemoteFileOutboundGateway;
 import org.springframework.integration.file.remote.session.SessionFactory;
-import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.sftp.dsl.Sftp;
@@ -71,6 +72,7 @@ import org.springframework.integration.transaction.DefaultTransactionSynchroniza
 import org.springframework.integration.transaction.PseudoTransactionManager;
 import org.springframework.integration.transaction.TransactionSynchronizationProcessor;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
@@ -137,6 +139,16 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
+	public MessageChannel sftpListInputChannel() {
+		return new DirectChannel();
+	}
+
+	@Bean
+	public MessageChannel taskLaunchRequestChannel() {
+		return new DirectChannel();
+	}
+
+	@Bean
 	public SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider(
 		SftpSourceTaskProperties taskLaunchRequestProperties,
 		SftpSourceProperties sourceProperties, LocalDirectoryResolver localDirectoryResolver,
@@ -198,12 +210,12 @@ public class SftpSourceConfiguration {
 			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.fileSourceRotator));
 
 			if (fileConsumerProperties.getMode() != FileReadingMode.ref && taskLaunchRequestProperties
-				.getTaskLauncherOutput() == TaskLaunchRequestType.NONE) {
+				.getTaskLaunchRequest() == TaskLaunchRequestType.NONE) {
 				flowBuilder = FileUtils.enhanceFlowForReadingMode(flowBuilder, fileConsumerProperties);
 			}
 		}
 
-		flowBuilder = enrichWithTaskLaunchRequestTransformers(flowBuilder).channel(Source.OUTPUT);
+		flowBuilder.channel(taskLaunchRequestChannel());
 
 		return flowBuilder.get();
 	}
@@ -212,7 +224,7 @@ public class SftpSourceConfiguration {
 		IntegrationFlowBuilder builder = this.properties.isMultiSource() ?
 			multiSourceListingFlowBuilder() :
 			singleSourceListingFlowBuilder(sftpSessionFactory);
-		return enrichWithTaskLaunchRequestTransformers(builder).channel(Source.OUTPUT).get();
+		return builder.get();
 	}
 
 	private IntegrationFlowBuilder singleSourceListingFlowBuilder(SessionFactory<LsEntry> sftpSessionFactory) {
@@ -221,7 +233,7 @@ public class SftpSourceConfiguration {
 			.handle(Sftp.outboundGateway(sftpSessionFactory, AbstractRemoteFileOutboundGateway.Command.LS.getCommand(),
 				"payload").options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
 			.split()
-			.transform(transformSftpMessage());
+			.channel(sftpListInputChannel());
 
 	}
 
@@ -234,11 +246,7 @@ public class SftpSourceConfiguration {
 
 		return flow.handle(this.listFilesRotator, "clearKey")
 			.split()
-			.transform(transformSftpMessage());
-	}
-
-	private IntegrationFlowBuilder enrichWithTaskLaunchRequestTransformers(IntegrationFlowBuilder builder) {
-		return builder.transform(taskLaunchRequestContextProvider).transform(taskLaunchRequestTransformer);
+			.channel(sftpListInputChannel());
 	}
 
 	private Consumer<SourcePollingChannelAdapterSpec> consumerSpec(Advice advice) {
@@ -274,26 +282,34 @@ public class SftpSourceConfiguration {
 	}
 
 	@IdempotentReceiver("idempotentReceiverInterceptor")
-	public MessageProcessor<Message> transformSftpMessage() {
+	@ServiceActivator(inputChannel = "sftpListInputChannel", outputChannel = "taskLaunchRequestChannel")
+	public Message<?> transformSftpMessage(Message<?> message) {
 
-		return message -> {
-			MessageHeaders messageHeaders = message.getHeaders();
-			Assert.notNull(messageHeaders, "Cannot transform message with null headers");
-			Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY),
-				"Remote directory header not found");
+		MessageHeaders messageHeaders = message.getHeaders();
+		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
+		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY),
+			"Remote directory header not found");
 
-			String fileName = (String) message.getPayload();
-			Assert.hasText(fileName, "Filename in payload cannot be empty");
+		String fileName = (String) message.getPayload();
+		Assert.hasText(fileName, "Filename in payload cannot be empty");
 
-			String fileDir = (String) messageHeaders.get(FileHeaders.REMOTE_DIRECTORY);
+		String fileDir = (String) messageHeaders.get(FileHeaders.REMOTE_DIRECTORY);
 
-			String outboundPayload = fileDir + fileName;
+		String outboundPayload = fileDir + fileName;
 
-			return MessageBuilder.withPayload(outboundPayload)
-				.copyHeaders(messageHeaders)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
-				.build();
-		};
+		return MessageBuilder.withPayload(outboundPayload)
+			.copyHeaders(messageHeaders)
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+			.build();
+	}
+
+	//TODO: Make this idempotent as well.
+	@Bean IntegrationFlow taskLaunchRequestFlow() {
+		IntegrationFlowBuilder builder = IntegrationFlows.from(taskLaunchRequestChannel());
+		return builder
+			.transform(taskLaunchRequestContextProvider)
+			.transform(taskLaunchRequestTransformer)
+			.channel(Source.OUTPUT).get();
 	}
 
 	@Bean
