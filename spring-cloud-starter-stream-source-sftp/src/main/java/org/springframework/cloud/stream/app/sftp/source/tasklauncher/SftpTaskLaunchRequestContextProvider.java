@@ -80,8 +80,10 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		log.debug(String.format("Preparing context for a %s task launch request", taskLaunchRequestTypeProvider
 			.taskLaunchRequestType().name()));
 
+		MessageBuilder builder = MessageBuilder.fromMessage(message);
+
 		if (listFilesRotator != null) {
-			message = MessageBuilder.fromMessage(message).copyHeaders(listFilesRotator.headers()).build();
+			builder = builder.copyHeaders(listFilesRotator.headers());
 		}
 
 		TaskLaunchRequestContext taskLaunchRequestContext = new TaskLaunchRequestContext();
@@ -99,7 +101,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		case STANDALONE:
 			addRemoteFileCommandLineArgs(taskLaunchRequestContext, message);
 			if (sourceProperties.isListOnly()) {
-				addSftpConnectionInfoToTaskEnvironment(taskLaunchRequestContext, message);
+				addSftpConnectionInfoToTaskEnvironment(taskLaunchRequestContext);
 			}
 			else {
 				addLocalFileCommandLineArgs(taskLaunchRequestContext, message);
@@ -110,7 +112,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 				taskLaunchRequestTypeProvider.taskLaunchRequestType().name()));
 		}
 
-		return adjustMessageHeaders(taskLaunchRequestContext, message);
+		return adjustMessageHeaders(taskLaunchRequestContext, builder).build();
 	}
 
 	private void addLocalFileCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
@@ -144,18 +146,15 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		}
 	}
 
-	private Message<?> adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext, Message<?>
-		message) {
+	private MessageBuilder adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext, MessageBuilder builder) {
 
-		MessageBuilder messageBuilder = MessageBuilder.fromMessage(message)
-			.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext);
+		builder.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext);
 		if (listFilesRotator != null) {
 			String[] headerNames = new String[listFilesRotator.headers().size()];
-			messageBuilder.
-				removeHeaders((String[]) listFilesRotator.headers().keySet().toArray(headerNames));
+			builder.removeHeaders((String[]) listFilesRotator.headers().keySet().toArray(headerNames));
 		}
 
-		return messageBuilder.build();
+		return builder;
 	}
 
 	private void addSftpConnectionInfoToTaskCommandLineArgs(TaskLaunchRequestContext taskLaunchRequestContext,
@@ -188,8 +187,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		}
 	}
 
-	private void addSftpConnectionInfoToTaskEnvironment(TaskLaunchRequestContext taskLaunchRequestContext,
-		Message message) {
+	private void addSftpConnectionInfoToTaskEnvironment(TaskLaunchRequestContext taskLaunchRequestContext) {
 
 		if (!this.sourceProperties.isMultiSource()) {
 			taskLaunchRequestContext.addEnvironmentVariable(SftpHeaders.SFTP_HOST_PROPERTY_KEY,

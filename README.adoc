@@ -9,27 +9,10 @@ include::spring-cloud-starter-stream-source-sftp/README.adoc[]
 include::spring-cloud-starter-stream-sink-sftp/README.adoc[]
 
 
-To run:
+To build this:
 
-Pull https://github.com/dturanski/sftp-downloaders and ./mvnw clean install
-
-build this:
-
+```
 ./mvnw clean install -PgenerateApps
-
-restore customized pom.xml and application.properties in apps/sftp-source-rabbit
-
-```
-git checkout apps/sftp-source-rabbit/pom.xml
-git checkout apps/sftp-source-rabbit/src/main/resources/application.properties
-```
-
-run the app standalone to reproduce the Spring config issue.
-
-```
-cd apps/sftp-source-rabbit
-./mvnw clean package
-java -jar target/sftp-source-rabbit-2.0.3.BUILD-SNAPSHOT.jar
 ```
 
 
