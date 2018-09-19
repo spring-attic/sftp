@@ -29,5 +29,4 @@ public interface SftpHeaders {
 	String SFTP_PASSWORD_PROPERTY_KEY = "sftp_password";
 
 	String SFTP_SELECTED_SERVER_PROPERTY_KEY = "sftp_selectedServer";
-
 }

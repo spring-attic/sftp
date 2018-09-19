@@ -215,7 +215,7 @@ public class SftpSourceConfiguration {
 			}
 		}
 
-		flowBuilder.channel(taskLaunchRequestChannel());
+		flowBuilder.channel(properties.isStream() ? source.output() : taskLaunchRequestChannel());
 
 		return flowBuilder.get();
 	}
@@ -281,14 +281,11 @@ public class SftpSourceConfiguration {
 		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
-	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpListInputChannel", outputChannel = "taskLaunchRequestChannel")
 	public Message<?> transformSftpMessage(Message<?> message) {
 
 		MessageHeaders messageHeaders = message.getHeaders();
-		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
-		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY),
-			"Remote directory header not found");
+		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY), "Remote directory header not found");
 
 		String fileName = (String) message.getPayload();
 		Assert.hasText(fileName, "Filename in payload cannot be empty");
@@ -303,13 +300,11 @@ public class SftpSourceConfiguration {
 			.build();
 	}
 
-	//TODO: Make this idempotent as well.
-	@Bean IntegrationFlow taskLaunchRequestFlow() {
-		IntegrationFlowBuilder builder = IntegrationFlows.from(taskLaunchRequestChannel());
-		return builder
-			.transform(taskLaunchRequestContextProvider)
-			.transform(taskLaunchRequestTransformer)
-			.channel(Source.OUTPUT).get();
+	@IdempotentReceiver("idempotentReceiverInterceptor")
+	@ServiceActivator(inputChannel = "taskLaunchRequestChannel", outputChannel = Source.OUTPUT)
+	public Message<?> transformToTaskLaunchRequestIfNecessary(Message<?> message) {
+		return taskLaunchRequestTransformer
+			.processMessage(taskLaunchRequestContextProvider.processMessage(message));
 	}
 
 	@Bean

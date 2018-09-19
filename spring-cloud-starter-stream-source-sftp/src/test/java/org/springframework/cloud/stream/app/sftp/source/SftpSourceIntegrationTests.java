@@ -17,6 +17,7 @@ package org.springframework.cloud.stream.app.sftp.source;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +75,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = { "sftp.remoteDir = sftpSource",
 	"sftp.factory.username = foo", "sftp.factory.password = foo", "sftp.factory.allowUnknownKeys = true",
-	"sftp.filenameRegex = .*", "logging.level.com.jcraft.jsch=WARN" })
+	"sftp.filenameRegex = .*", "logging.level.com.jcraft.jsch=WARN",
+	"logging.level.org.springframework.cloud.stream.app.sftp.source=DEBUG" })
 @DirtiesContext
 public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
@@ -214,7 +216,8 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 					.iterator()
 					.next(), "pattern").toString());
 			for (int i = 1; i <= 2; i++) {
-				Message<?> received = this.messageCollector.forChannel(sftpSource.output()).poll(10, TimeUnit.SECONDS);
+				Message<?> received = this.messageCollector.forChannel(sftpSource.output()).poll(1000, TimeUnit
+					.SECONDS);
 				assertNotNull(received);
 				assertThat(received.getPayload(), instanceOf(String.class));
 				assertThat((String) received.getPayload(), containsString("mark=START"));
@@ -235,8 +238,10 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		+ ".integration=DEBUG" })
 	public static class SftpListOnlyGatewayTests extends SftpSourceIntegrationTests {
 
+
+
 		@Test
-		public void listFiles() throws InterruptedException {
+		public void listFiles() throws InterruptedException, IOException {
 			for (int i = 1; i <= 2; i++) {
 				@SuppressWarnings("unchecked") Message<String> received = (Message<String>) this.messageCollector.forChannel(
 					sftpSource.output()).poll(10, TimeUnit.SECONDS);

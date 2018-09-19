@@ -79,7 +79,7 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 		args = new String[] { "--sftp.remoteDir=sftpSource",
 			"--sftp.factory.username=foo", "--sftp.factory.password=foo", "--sftp.factory.allowUnknownKeys=true",
 			"--sftp.filenameRegex=.*", "--logging.level.com.jcraft.jsch=WARN",
-			"--logging.level.org.springframework.cloud.stream.app.sftp.source=INFO" };
+			"--logging.level.org.springframework.cloud.stream.app.sftp.source=DEBUG" };
 	}
 
 	@Test
@@ -270,7 +270,7 @@ public class SftpSourceTaskLaunchRequestIntegrationTests extends SftpTestSupport
 		OutputDestination outputDestination = context.getBean(OutputDestination.class);
 		ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
 
-		Message<byte[]> message = outputDestination.receive(1000);
+		Message<byte[]> message = outputDestination.receive(10000);
 
 		assertThat(message).isNotNull();
 
