@@ -23,7 +23,6 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.stream.app.file.LocalDirectoryResolver;
 import org.springframework.cloud.stream.app.file.remote.FilePathUtils;
 import org.springframework.cloud.stream.app.sftp.source.ListFilesRotator;
 import org.springframework.cloud.stream.app.sftp.source.SftpHeaders;
@@ -51,22 +50,19 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 
 	private final SftpSourceTaskProperties sftpSourceTaskProperties;
 	private final SftpSourceProperties sourceProperties;
-	private final LocalDirectoryResolver localDirectoryResolver;
 	private final TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider;
 	private final ListFilesRotator listFilesRotator;
 
 	public SftpTaskLaunchRequestContextProvider(
 		SftpSourceTaskProperties sftpSourceTaskProperties, SftpSourceProperties sourceProperties,
-		LocalDirectoryResolver localDirectoryResolver, TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider,
+		TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider,
 		ListFilesRotator listFilesRotator) {
 		Assert.notNull(sftpSourceTaskProperties, "'sftpSourceTaskProperties' is required");
 		Assert.notNull(sourceProperties, "'sourceProperties' is required");
-		Assert.notNull(localDirectoryResolver, "'localDirectoryResolver' is required");
 		Assert.notNull(taskLaunchRequestTypeProvider, "'taskLaunchRequestTypeProvider' is required");
 
 		this.sftpSourceTaskProperties = sftpSourceTaskProperties;
 		this.sourceProperties = sourceProperties;
-		this.localDirectoryResolver = localDirectoryResolver;
 		this.taskLaunchRequestTypeProvider = taskLaunchRequestTypeProvider;
 		this.listFilesRotator = listFilesRotator;
 	}
@@ -123,8 +119,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		if (sourceProperties.isListOnly()) {
 			String filename = (String) message.getPayload();
 			localFilePath =
-				FilePathUtils.getLocalFilePath(localDirectoryResolver.resolve(
-					sourceProperties.getLocalDir().getPath()).getPath(),
+				FilePathUtils.getLocalFilePath(sourceProperties.getLocalDir().getPath(),
 					filename);
 		}
 		else {

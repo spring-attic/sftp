@@ -20,16 +20,6 @@ When configuring the `sftp.factory.known-hosts-expression` option, the root obje
 See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
 
 
-
-[NOTE]
-This app is designed to work with CloundFoundry(2.3+) Volume Services. The app will be automatically configured to use
-CloundFoundry Volume Services when running in CloudFoundy with the `nfs` service enabled and bound.  If using
-CloudFoundry volume services, `local-dir` is always interpreted as relative to the bound nfs service instance's mount
-point. The default `local-dir`, something like `Paths.get(System("java.io.tmpdir"),"sftp-source")` This will work
-fine for downstream apps that are also bound to nfs and consume the path in the message payload, but may be inconvenient
-for external access. The assumption is if the service is present, the intention is to use it. For non-container environments,
-relative and absolute paths work as expected. If `list-only=true` or `stream=true` the remote file will not be downloaded in any case.
-
 [NOTE]
 This app will optionally transform
 the output payload to use as input to one of the standard `task-launcher` sinks. This feature is enabled by setting

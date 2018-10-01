@@ -15,6 +15,7 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Consumer;
@@ -26,13 +27,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.app.file.FileConsumerProperties;
 import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
-import org.springframework.cloud.stream.app.file.LocalDirectoryResolver;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
@@ -124,19 +123,10 @@ public class SftpSourceConfiguration {
 	SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider;
 
 	@Autowired
-	private LocalDirectoryResolver localDirectoryResolver;
-
-	@Autowired
 	TaskLaunchRequestTransformer taskLaunchRequestTransformer;
 
 	@Autowired
 	TaskLaunchRequestProperties taskLaunchRequestProperties;
-
-	@Bean
-	@ConditionalOnMissingBean
-	LocalDirectoryResolver localDirectoryResolver() {
-		return new LocalDirectoryResolver();
-	}
 
 	@Bean
 	public MessageChannel sftpListInputChannel() {
@@ -151,10 +141,10 @@ public class SftpSourceConfiguration {
 	@Bean
 	public SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider(
 		SftpSourceTaskProperties sftpSourceTaskProperties,
-		SftpSourceProperties sourceProperties, LocalDirectoryResolver localDirectoryResolver,
+		SftpSourceProperties sourceProperties,
 		TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider) {
 		return new SftpTaskLaunchRequestContextProvider(sftpSourceTaskProperties,
-			sourceProperties, localDirectoryResolver, taskLaunchRequestTypeProvider, listFilesRotator);
+			sourceProperties, taskLaunchRequestTypeProvider, listFilesRotator);
 	}
 
 	@Bean
@@ -198,7 +188,7 @@ public class SftpSourceConfiguration {
 				.preserveTimestamp(this.properties.isPreserveTimestamp())
 				.remoteDirectory(this.properties.getRemoteDir())
 				.remoteFileSeparator(this.properties.getRemoteFileSeparator())
-				.localDirectory(localDirectoryResolver.resolve(properties.getLocalDir().getPath()))
+				.localDirectory(new File(properties.getLocalDir().getPath()))
 				.autoCreateLocalDirectory(this.properties.isAutoCreateLocalDir())
 				.temporaryFileSuffix(this.properties.getTmpFileSuffix())
 				.deleteRemoteFiles(this.properties.isDeleteRemoteFiles())

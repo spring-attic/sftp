@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.app.file.LocalDirectoryResolver;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
@@ -97,7 +96,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 
 	protected final ObjectMapper objectMapper = new ObjectMapper();
 
-	@TestPropertySource(properties = { "file.consumer.mode = ref"})
+	@TestPropertySource(properties = { "file.consumer.mode = ref" })
 	public static class RefTests extends SftpSourceIntegrationTests {
 
 		@Autowired
@@ -145,9 +144,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		@Autowired
 		SftpRemoteFileTemplate template;
 
-		@Autowired
-		LocalDirectoryResolver localDirectoryResolver;
-
 		@Test
 		public void sourceFilesAsRef() throws Exception {
 			assertNull(this.streamingSource);
@@ -173,7 +169,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			assertThat(received.getPayload(), instanceOf(String.class));
 			assertThat(received.getHeaders().get(MessageHeaders.CONTENT_TYPE), equalTo(MimeTypeUtils.TEXT_PLAIN));
 			assertThat(received.getPayload(), equalTo(config.getLocalDir() + File.separator + "sftpSource1.txt"));
-			assertTrue(localDirectoryResolver.resolve(config.getLocalDir() + File.separator + "sftpSource1.txt")
+			assertTrue(new File(config.getLocalDir().getAbsolutePath() + File.separator + "sftpSource1.txt")
 				.exists());
 		}
 
@@ -236,8 +232,6 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 		"sftp.factory.username = user", "sftp.factory.password = pass", "logging.level.org.springframework"
 		+ ".integration=DEBUG" })
 	public static class SftpListOnlyGatewayTests extends SftpSourceIntegrationTests {
-
-
 
 		@Test
 		public void listFiles() throws InterruptedException, IOException {
