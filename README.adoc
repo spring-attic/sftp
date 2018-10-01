@@ -8,3 +8,11 @@ include::spring-cloud-starter-stream-source-sftp/README.adoc[]
 ## SFTP Sink
 include::spring-cloud-starter-stream-sink-sftp/README.adoc[]
 
+
+To build this:
+
+```
+./mvnw clean install -PgenerateApps
+```
+
+

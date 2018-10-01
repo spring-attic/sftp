@@ -15,27 +15,32 @@
 
 package org.springframework.cloud.stream.app.sftp.source;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Consumer;
 
+import com.jcraft.jsch.ChannelSftp.LsEntry;
 import org.aopalliance.aop.Advice;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.app.file.FileConsumerProperties;
 import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.TaskLaunchRequestType;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
-import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
+import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
+import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpTaskLaunchRequestContextProvider;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestProperties;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTransformer;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestType;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTypeProvider;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
 import org.springframework.cloud.stream.messaging.Source;
@@ -75,8 +80,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
-import com.jcraft.jsch.ChannelSftp.LsEntry;
-
 /**
  * @author Gary Russell
  * @author Artem Bilan
@@ -85,12 +88,10 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
  * @author David Turanski
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class })
-@Import({ TriggerConfiguration.class,
-		SftpSourceSessionFactoryConfiguration.class,
-		TriggerPropertiesMaxMessagesDefaultUnlimited.class,
-		SftpSourceIdempotentReceiverConfiguration.class,
-		SftpSourceTaskLauncherConfiguration.class })
+@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class,
+	TriggerPropertiesMaxMessagesDefaultUnlimited.class, SftpSourceTaskProperties.class })
+@Import({ TriggerConfiguration.class, SftpSourceSessionFactoryConfiguration.class,
+	SftpSourceIdempotentReceiverConfiguration.class })
 public class SftpSourceConfiguration {
 
 	@Autowired
@@ -100,13 +101,13 @@ public class SftpSourceConfiguration {
 	@Autowired
 	private Source source;
 
-	@Autowired(required = false)
+	@Autowired
 	private SftpRemoteFileTemplate sftpTemplate;
 
 	@Autowired
 	private SftpSourceProperties properties;
-	@Autowired
 
+	@Autowired
 	private ConcurrentMetadataStore metadataStore;
 
 	@Autowired(required = false)
@@ -118,20 +119,37 @@ public class SftpSourceConfiguration {
 	@Autowired(required = false)
 	private RotatingServerAdvice fileSourceRotator;
 
+	@Autowired
+	SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider;
+
+	@Autowired
+	TaskLaunchRequestTransformer taskLaunchRequestTransformer;
+
+	@Autowired
+	TaskLaunchRequestProperties taskLaunchRequestProperties;
+
 	@Bean
-	public MessageChannel sftpFileListChannel() {
+	public MessageChannel sftpListInputChannel() {
 		return new DirectChannel();
 	}
 
 	@Bean
-	public MessageChannel sftpFileTaskLaunchChannel() {
+	public MessageChannel taskLaunchRequestChannel() {
 		return new DirectChannel();
 	}
 
-	@SuppressWarnings("resource")
+	@Bean
+	public SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider(
+		SftpSourceTaskProperties sftpSourceTaskProperties,
+		SftpSourceProperties sourceProperties,
+		TaskLaunchRequestTypeProvider taskLaunchRequestTypeProvider) {
+		return new SftpTaskLaunchRequestContextProvider(sftpSourceTaskProperties,
+			sourceProperties, taskLaunchRequestTypeProvider, listFilesRotator);
+	}
+
 	@Bean
 	public IntegrationFlow sftpInboundFlow(SessionFactory<LsEntry> sftpSessionFactory,
-			FileConsumerProperties fileConsumerProperties) {
+		FileConsumerProperties fileConsumerProperties) {
 		ChainFileListFilter<LsEntry> filterChain = new ChainFileListFilter<>();
 		if (StringUtils.hasText(this.properties.getFilenamePattern())) {
 			filterChain.addFilter(new SftpSimplePatternFileListFilter(this.properties.getFilenamePattern()));
@@ -144,92 +162,81 @@ public class SftpSourceConfiguration {
 		IntegrationFlowBuilder flowBuilder;
 
 		if (this.properties.isStream()) {
-			SftpStreamingInboundChannelAdapterSpec messageSourceStreamingSpec =
-					Sftp.inboundStreamingAdapter(this.sftpTemplate)
-							.remoteDirectory(this.properties.getRemoteDir())
-							.remoteFileSeparator(this.properties.getRemoteFileSeparator())
-							.filter(filterChain);
+			SftpStreamingInboundChannelAdapterSpec messageSourceStreamingSpec = Sftp.inboundStreamingAdapter(
+				this.sftpTemplate)
+				.remoteDirectory(this.properties.getRemoteDir())
+				.remoteFileSeparator(this.properties.getRemoteFileSeparator())
+				.filter(filterChain);
 			if (this.properties.getMaxFetch() != null) {
 				messageSourceStreamingSpec.maxFetchSize(this.properties.getMaxFetch());
 			}
 
-			flowBuilder = FileUtils.enhanceStreamFlowForReadingMode(
-					IntegrationFlows.from(messageSourceStreamingSpec,
-							this.properties.isDeleteRemoteFiles()
-								? consumerSpecWithDelete(this.fileSourceRotator)
-								: consumerSpec(this.fileSourceRotator)),
-					fileConsumerProperties);
+			flowBuilder = FileUtils.enhanceStreamFlowForReadingMode(IntegrationFlows.from(messageSourceStreamingSpec,
+				this.properties.isDeleteRemoteFiles() ?
+					consumerSpecWithDelete(this.fileSourceRotator) :
+					consumerSpec(this.fileSourceRotator)), fileConsumerProperties);
 		}
-		else if (properties.isListOnly() || properties.getTaskLauncherOutput() != SftpSourceProperties
-				.TaskLaunchRequestType.NONE) {
+
+		else if (properties.isListOnly()) {
 			return listingFlow(sftpSessionFactory);
 		}
-		else {
-			SftpInboundChannelAdapterSpec messageSourceBuilder =
-					Sftp.inboundAdapter(this.properties.isMultiSource()
-								? this.delegatingSessionFactory.getFactory() : sftpSessionFactory)
-							.preserveTimestamp(this.properties.isPreserveTimestamp())
-							.remoteDirectory(this.properties.getRemoteDir())
-							.remoteFileSeparator(this.properties.getRemoteFileSeparator())
-							.localDirectory(this.properties.getLocalDir())
-							.autoCreateLocalDirectory(this.properties.isAutoCreateLocalDir())
-							.temporaryFileSuffix(this.properties.getTmpFileSuffix())
-							.deleteRemoteFiles(this.properties.isDeleteRemoteFiles())
-							.filter(filterChain);
 
+		else {
+			//Save remote file to local file system
+			SftpInboundChannelAdapterSpec messageSourceBuilder = Sftp.inboundAdapter(
+				this.properties.isMultiSource() ? this.delegatingSessionFactory.getFactory() : sftpSessionFactory)
+				.preserveTimestamp(this.properties.isPreserveTimestamp())
+				.remoteDirectory(this.properties.getRemoteDir())
+				.remoteFileSeparator(this.properties.getRemoteFileSeparator())
+				.localDirectory(new File(properties.getLocalDir().getPath()))
+				.autoCreateLocalDirectory(this.properties.isAutoCreateLocalDir())
+				.temporaryFileSuffix(this.properties.getTmpFileSuffix())
+				.deleteRemoteFiles(this.properties.isDeleteRemoteFiles())
+				.filter(filterChain);
 			if (this.properties.getMaxFetch() != null) {
 				messageSourceBuilder.maxFetchSize(this.properties.getMaxFetch());
 			}
 
 			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.fileSourceRotator));
 
-			if (fileConsumerProperties.getMode() != FileReadingMode.ref) {
+			if (fileConsumerProperties.getMode() != FileReadingMode.ref && taskLaunchRequestProperties
+				.getFormat() == TaskLaunchRequestType.NONE) {
 				flowBuilder = FileUtils.enhanceFlowForReadingMode(flowBuilder, fileConsumerProperties);
 			}
 		}
 
-		return flowBuilder
-				.channel(this.source.output())
-				.get();
+		flowBuilder.channel(properties.isStream() ? source.output() : taskLaunchRequestChannel());
+
+		return flowBuilder.get();
 	}
 
 	private IntegrationFlow listingFlow(SessionFactory<LsEntry> sftpSessionFactory) {
-		if (this.properties.isMultiSource()) {
-			return multiSourceListingFlow();
-		}
-		else {
-			return singleSourceListingFlow(sftpSessionFactory);
-		}
+		IntegrationFlowBuilder builder = this.properties.isMultiSource() ?
+			multiSourceListingFlowBuilder() :
+			singleSourceListingFlowBuilder(sftpSessionFactory);
+		return builder.get();
 	}
 
-	private IntegrationFlow singleSourceListingFlow(SessionFactory<LsEntry> sftpSessionFactory) {
-		return IntegrationFlows.from(() -> this.properties.getRemoteDir(), consumerSpec(this.listFilesRotator))
-				.handle(Sftp.outboundGateway(sftpSessionFactory,
-						AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
-						.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
-				.split()
-				.channel(listOrLaunchChannel())
-				.get();
+	private IntegrationFlowBuilder singleSourceListingFlowBuilder(SessionFactory<LsEntry> sftpSessionFactory) {
+		return IntegrationFlows.from(() -> this.properties.getRemoteDir(), consumerSpec(this
+			.listFilesRotator))
+			.handle(Sftp.outboundGateway(sftpSessionFactory, AbstractRemoteFileOutboundGateway.Command.LS.getCommand(),
+				"payload").options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
+			.split()
+			.channel(sftpListInputChannel());
+
 	}
 
-	private IntegrationFlow multiSourceListingFlow() {
-		IntegrationFlowBuilder flow = IntegrationFlows.from(() ->
-					this.listFilesRotator.getCurrentDirectory(), consumerSpec(this.listFilesRotator))
-				.handle(Sftp.outboundGateway(this.delegatingSessionFactory.getFactory(),
-						AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
-						.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()));
-		if (this.properties.getTaskLauncherOutput() != TaskLaunchRequestType.NONE) {
-			flow.enrichHeaders(this.listFilesRotator.headers());
-		}
-		return flow
-				.handle(this.listFilesRotator, "clearKey")
-				.split()
-				.channel(listOrLaunchChannel())
-				.get();
-	}
+	private IntegrationFlowBuilder multiSourceListingFlowBuilder() {
+		IntegrationFlowBuilder flow = IntegrationFlows.from(() -> this.listFilesRotator.getCurrentDirectory(),
+			consumerSpec(this.listFilesRotator))
+			.handle(Sftp.outboundGateway(this.delegatingSessionFactory.getFactory(),
+				AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
+				.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()));
 
-	private MessageChannel listOrLaunchChannel() {
-		return this.properties.isListOnly() ? sftpFileListChannel() : sftpFileTaskLaunchChannel();
+		return flow.handle(this.listFilesRotator, "clearKey")
+			.split()
+			.channel(sftpListInputChannel());
 	}
 
 	private Consumer<SourcePollingChannelAdapterSpec> consumerSpec(Advice advice) {
@@ -248,10 +255,10 @@ public class SftpSourceConfiguration {
 		final PollerMetadata poller = new PollerMetadata();
 		BeanUtils.copyProperties(this.defaultPoller, poller, "transactionSynchronizationFactory");
 		TransactionSynchronizationProcessor processor = new RemoteFileDeletingTransactionSynchronizationProcessor(
-				this.sftpTemplate, this.properties.getRemoteFileSeparator());
+			this.sftpTemplate, this.properties.getRemoteFileSeparator());
 		poller.setTransactionSynchronizationFactory(new DefaultTransactionSynchronizationFactory(processor));
-		poller.setAdviceChain(Collections.singletonList(new TransactionInterceptor(
-				new PseudoTransactionManager(), new MatchAlwaysTransactionAttributeSource())));
+		poller.setAdviceChain(Collections.singletonList(
+			new TransactionInterceptor(new PseudoTransactionManager(), new MatchAlwaysTransactionAttributeSource())));
 		if (advice != null) {
 			poller.setAdviceChain(Arrays.asList(advice));
 		}
@@ -259,20 +266,15 @@ public class SftpSourceConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.stream")
-	public SftpRemoteFileTemplate sftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
-			@Autowired(required = false) DelegatingFactoryWrapper wrapper,
-			SftpSourceProperties properties) {
-		return new SftpRemoteFileTemplate(properties.isMultiSource()
-				? wrapper.getFactory() : sftpSessionFactory);
+	public SftpRemoteFileTemplate wrappedSftpTemplate(SessionFactory<LsEntry> sftpSessionFactory,
+		@Autowired(required = false) DelegatingFactoryWrapper wrapper, SftpSourceProperties properties) {
+		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
-	@ConditionalOnProperty(name = "sftp.listOnly")
-	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileListChannel", outputChannel = Source.OUTPUT)
+	@ServiceActivator(inputChannel = "sftpListInputChannel", outputChannel = "taskLaunchRequestChannel")
 	public Message<?> transformSftpMessage(Message<?> message) {
+
 		MessageHeaders messageHeaders = message.getHeaders();
-		Assert.notNull(messageHeaders, "Cannot transform message with null headers");
 		Assert.isTrue(messageHeaders.containsKey(FileHeaders.REMOTE_DIRECTORY), "Remote directory header not found");
 
 		String fileName = (String) message.getPayload();
@@ -282,15 +284,22 @@ public class SftpSourceConfiguration {
 
 		String outboundPayload = fileDir + fileName;
 
-		return MessageBuilder.withPayload(outboundPayload).copyHeaders(messageHeaders)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
+		return MessageBuilder.withPayload(outboundPayload)
+			.copyHeaders(messageHeaders)
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+			.build();
+	}
+
+	@IdempotentReceiver("idempotentReceiverInterceptor")
+	@ServiceActivator(inputChannel = "taskLaunchRequestChannel", outputChannel = Source.OUTPUT)
+	public Message<?> transformToTaskLaunchRequestIfNecessary(Message<?> message) {
+		return taskLaunchRequestTransformer
+			.processMessage(taskLaunchRequestContextProvider.processMessage(message));
 	}
 
 	@Bean
 	public ListFilesRotator rotator(SftpSourceProperties properties, ObjectProvider<DelegatingFactoryWrapper> factory) {
-		return properties.isMultiSource()
-			? new ListFilesRotator(properties, factory.getIfUnique())
-			: null;
+		return properties.isMultiSource() ? new ListFilesRotator(properties, factory.getIfUnique()) : null;
 	}
 
 }

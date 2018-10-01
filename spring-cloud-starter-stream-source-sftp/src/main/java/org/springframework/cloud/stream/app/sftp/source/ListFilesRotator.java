@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.Factory;
 import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
-import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
 import org.springframework.integration.aop.AbstractMessageSourceAdvice;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.expression.FunctionExpression;
@@ -41,10 +40,10 @@ import org.springframework.messaging.Message;
  * directories/servers.
  *
  * @author Gary Russell
+ * @author David Turanski
  * @since 2.0
- *
  */
-class ListFilesRotator extends AbstractMessageSourceAdvice {
+public class ListFilesRotator extends AbstractMessageSourceAdvice {
 
 	private static final Log logger = LogFactory.getLog(ListFilesRotator.class);
 
@@ -62,7 +61,7 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 
 	private volatile KeyDirectory current;
 
-	ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
+	public ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
 		this.properties = properties;
 		this.sessionFactory = factory.getFactory();
 		if (properties.isMultiSource()) {
@@ -82,16 +81,11 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 			return selected;
 		};
 		Map<String, Object> map = new HashMap<>();
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_SELECTED_SERVER_PROPERTY_KEY,
-				new FunctionExpression<>(m -> this.current.getKey()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_HOST_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getHost()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_PORT_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getPort()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_USERNAME_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getUsername()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_PASSWORD_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getPassword()));
+		map.put(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY, new FunctionExpression<>(m -> this.current.getKey()));
+		map.put(SftpHeaders.SFTP_HOST_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getHost()));
+		map.put(SftpHeaders.SFTP_PORT_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getPort()));
+		map.put(SftpHeaders.SFTP_USERNAME_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getUsername()));
+		map.put(SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getPassword()));
 		return map;
 	}
 
@@ -123,9 +117,7 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 		this.sessionFactory.clearThreadKey();
 		boolean noFilesReceived = message.getPayload().size() == 0;
 		if (logger.isTraceEnabled()) {
-			logger.trace("Poll produced "
-					+ (noFilesReceived ? "no" : "")
-					+ " files");
+			logger.trace("Poll produced " + (noFilesReceived ? "no" : "") + " files");
 		}
 		if (!this.fair && noFilesReceived) {
 			rotate();

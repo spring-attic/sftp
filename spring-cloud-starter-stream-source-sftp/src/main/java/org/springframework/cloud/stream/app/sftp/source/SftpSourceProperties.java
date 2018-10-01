@@ -21,11 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -43,7 +41,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp")
 @Validated
 public class SftpSourceProperties {
-	public enum TaskLaunchRequestType {DATAFLOW, STANDALONE, NONE};
 
 	/**
 	 * Session factory properties.
@@ -71,7 +68,7 @@ public class SftpSourceProperties {
 	private boolean deleteRemoteFiles = false;
 
 	/**
-	 * The local directory to use for file transfers.
+	 * The local directory (or target location) to use for file transfers.
 	 */
 	private File localDir = new File(System.getProperty("java.io.tmpdir"), "sftp-source");
 
@@ -104,11 +101,6 @@ public class SftpSourceProperties {
 	 * Set to true to return file metadata without the entire payload.
 	 */
 	private boolean listOnly = false;
-
-	/**
-	 * Set to create output suitable for a task launch request. Default is `NONE`
-	 */
-	private TaskLaunchRequestType taskLauncherOutput = TaskLaunchRequestType.NONE;
 
 	/**
 	 * The maximum number of remote files to fetch per poll; default unlimited.
@@ -212,11 +204,6 @@ public class SftpSourceProperties {
 		return !(this.filenamePattern != null && this.filenameRegex != null);
 	}
 
-	@AssertFalse(message = "listOnly and taskLauncherOutput cannot be used at the same time")
-	public boolean isListOnlyOrTaskLauncher() {
-		return listOnly && taskLauncherOutput != TaskLaunchRequestType.NONE;
-	}
-
 	public boolean isStream() {
 		return this.stream;
 	}
@@ -227,14 +214,6 @@ public class SftpSourceProperties {
 
 	public Factory getFactory() {
 		return this.factory;
-	}
-
-	public TaskLaunchRequestType getTaskLauncherOutput() {
-		return taskLauncherOutput;
-	}
-
-	public void setTaskLauncherOutput(TaskLaunchRequestType taskLauncherOutput) {
-		this.taskLauncherOutput = taskLauncherOutput;
 	}
 
 	public boolean isListOnly() {

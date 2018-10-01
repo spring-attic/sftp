@@ -16,13 +16,16 @@
 
 package org.springframework.cloud.stream.app.sftp.source.metadata;
 
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.io.File;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.channel.NullChannel;
 import org.springframework.integration.file.FileHeaders;
-import org.springframework.integration.handler.ExpressionEvaluatingMessageProcessor;
+import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.integration.handler.advice.IdempotentReceiverInterceptor;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
 import org.springframework.integration.selector.MetadataStoreSelector;
@@ -30,22 +33,36 @@ import org.springframework.integration.selector.MetadataStoreSelector;
 /**
  * @author Chris Schaefer
  * @author Artem Bilan
+ * @author David Turanski
  */
 public class SftpSourceIdempotentReceiverConfiguration {
 
-	@Autowired
-	private BeanFactory beanFactory;
+	private static Log log = LogFactory.getLog(SftpSourceIdempotentReceiverConfiguration.class);
 
 	@Bean
 	@ConditionalOnMissingBean
 	public IdempotentReceiverInterceptor idempotentReceiverInterceptor(ConcurrentMetadataStore metadataStore) {
-		ExpressionEvaluatingMessageProcessor<String> idempotentKeyStrategy =
-				new ExpressionEvaluatingMessageProcessor<>(
-						"headers['" + FileHeaders.REMOTE_DIRECTORY + "'].concat(payload)");
-		idempotentKeyStrategy.setBeanFactory(this.beanFactory);
+
+		MessageProcessor<String> idempotentKeyStrategy =
+			message -> {
+				String key;
+				if (message.getPayload() instanceof String) {
+					key = (String) message.getPayload();
+				}
+				else if (message.getHeaders().containsKey(FileHeaders.ORIGINAL_FILE)) {
+					File originalFile = (File) message.getHeaders().get(FileHeaders.ORIGINAL_FILE);
+					key = (String.format("%s-%d", originalFile.getAbsolutePath(), originalFile.lastModified()));
+				}
+				else {
+					key = message.getHeaders().getId().toString();
+				}
+
+				log.debug(String.format("Idempotent key %s", key));
+				return key;
+			};
 
 		IdempotentReceiverInterceptor idempotentReceiverInterceptor =
-				new IdempotentReceiverInterceptor(new MetadataStoreSelector(idempotentKeyStrategy, metadataStore));
+			new IdempotentReceiverInterceptor(new MetadataStoreSelector(idempotentKeyStrategy, metadataStore));
 		idempotentReceiverInterceptor.setDiscardChannel(new NullChannel());
 
 		return idempotentReceiverInterceptor;
