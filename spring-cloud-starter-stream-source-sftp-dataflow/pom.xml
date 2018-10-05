@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>spring-cloud-starter-stream-source-sftp</artifactId>
+	<artifactId>spring-cloud-starter-stream-source-sftp-dataflow</artifactId>
 	<packaging>jar</packaging>
-	<name>spring-cloud-starter-stream-source-sftp</name>
-	<description>Spring Cloud Stream sftp-source core</description>
+	<name>spring-cloud-starter-stream-source-sftp-dataflow</name>
+	<description>Spring Cloud Stream SFT source for Data Flow TaskLaunchRequest</description>
 
 	<parent>
 		<groupId>org.springframework.cloud.stream.app</groupId>
@@ -14,13 +14,21 @@
 	</parent>
 
 	<dependencies>
+
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
 			<artifactId>sftp-app-starters-source-common</artifactId>
 		</dependency>
+
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-task-stream</artifactId>
+			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>app-starters-task-launch-request-common</artifactId>
+			<version>2.0.2.BUILD-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>sftp-app-starters-test-support</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
@@ -41,11 +49,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
 			<artifactId>app-starters-file-common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud.stream.app</groupId>
-			<artifactId>sftp-app-starters-test-support</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.integration</groupId>
@@ -74,7 +77,7 @@
 						<version>${project.version}</version>
 					</bom>
 					<generatedApps>
-						<sftp-source/>
+						<sftp-dataflow-source/>
 					</generatedApps>
 				</configuration>
 			</plugin>

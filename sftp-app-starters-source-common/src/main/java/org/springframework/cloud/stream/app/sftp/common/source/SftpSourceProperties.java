@@ -1,10 +1,11 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2018 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source;
+package org.springframework.cloud.stream.app.sftp.common.source;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -21,16 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.expression.Expression;
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyDirectory;
+
 import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 
@@ -43,7 +44,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp")
 @Validated
 public class SftpSourceProperties {
-	public enum TaskLaunchRequestType {DATAFLOW, STANDALONE, NONE};
 
 	/**
 	 * Session factory properties.
@@ -106,11 +106,6 @@ public class SftpSourceProperties {
 	private boolean listOnly = false;
 
 	/**
-	 * Set to create output suitable for a task launch request. Default is `NONE`
-	 */
-	private TaskLaunchRequestType taskLauncherOutput = TaskLaunchRequestType.NONE;
-
-	/**
 	 * The maximum number of remote files to fetch per poll; default unlimited.
 	 * Does not apply when listing files or building task launch requests.
 	 */
@@ -130,6 +125,11 @@ public class SftpSourceProperties {
 	 * A list of factory "name.directory" pairs.
 	 */
 	private String[] directories;
+
+	/**
+	 * Set to true to create output suitable for a task launch request.
+	 */
+	private boolean taskLauncherOutput = false;
 
 	@NotBlank
 	public String getRemoteDir() {
@@ -212,31 +212,6 @@ public class SftpSourceProperties {
 		return !(this.filenamePattern != null && this.filenameRegex != null);
 	}
 
-	@AssertFalse(message = "listOnly and taskLauncherOutput cannot be used at the same time")
-	public boolean isListOnlyOrTaskLauncher() {
-		return listOnly && taskLauncherOutput != TaskLaunchRequestType.NONE;
-	}
-
-	public boolean isStream() {
-		return this.stream;
-	}
-
-	public void setStream(boolean stream) {
-		this.stream = stream;
-	}
-
-	public Factory getFactory() {
-		return this.factory;
-	}
-
-	public TaskLaunchRequestType getTaskLauncherOutput() {
-		return taskLauncherOutput;
-	}
-
-	public void setTaskLauncherOutput(TaskLaunchRequestType taskLauncherOutput) {
-		this.taskLauncherOutput = taskLauncherOutput;
-	}
-
 	public boolean isListOnly() {
 		return listOnly;
 	}
@@ -281,7 +256,27 @@ public class SftpSourceProperties {
 		this.directories = directories;
 	}
 
-	public static List<KeyDirectory> keyDirectories(SftpSourceProperties properties) {
+	public boolean isTaskLauncherOutput() {
+		return taskLauncherOutput;
+	}
+
+	public void setTaskLauncherOutput(boolean taskLauncherOutput) {
+		this.taskLauncherOutput = taskLauncherOutput;
+	}
+
+	public boolean isStream() {
+		return stream;
+	}
+
+	public void setStream(boolean stream) {
+		this.stream = stream;
+	}
+
+	public Factory getFactory() {
+		return factory;
+	}
+
+	static List<RotatingServerAdvice.KeyDirectory> keyDirectories(SftpSourceProperties properties) {
 		List<KeyDirectory> keyDirs = new ArrayList<>();
 		Assert.isTrue(properties.getDirectories().length > 0, "At least one key.directory required");
 		for (String keyDir : properties.getDirectories()) {
@@ -401,7 +396,5 @@ public class SftpSourceProperties {
 		public void setKnownHostsExpression(Expression knownHosts) {
 			this.knownHostsExpression = knownHosts;
 		}
-
 	}
-
 }

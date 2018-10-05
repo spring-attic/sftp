@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,7 @@ import java.util.Properties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
 import org.springframework.cloud.stream.messaging.Source;
@@ -42,8 +42,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Chris Schaefer
@@ -79,14 +77,10 @@ public class SftpSourceTaskLauncherConfiguration {
 		SftpSourceTaskProperties sftpSourceTaskProperties) {
 		this.sftpSourceProperties = sftpSourceProperties;
 		this.sftpSourceTaskProperties = sftpSourceTaskProperties;
-		if (sftpSourceProperties.getTaskLauncherOutput() == SftpSourceProperties.TaskLaunchRequestType.DATAFLOW) {
-			Assert.hasText(sftpSourceTaskProperties.getApplicationName(),
-				"'applicationName' is required for DataFlow Task Launcher.");
-		}
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "STANDALONE")
+	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "true")
 	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
 	public MessageProcessor<Message<?>> standaloneTaskLaunchRequestTransformer() {
@@ -113,24 +107,6 @@ public class SftpSourceTaskLauncherConfiguration {
 			return builder.build();
 		};
 	}
-
-	@Bean
-	@ConditionalOnProperty(name = "sftp.task-launcher-output", havingValue = "DATAFLOW")
-	@IdempotentReceiver("idempotentReceiverInterceptor")
-	@ServiceActivator(inputChannel = "sftpFileTaskLaunchChannel", outputChannel = Source.OUTPUT)
-	public MessageProcessor<Message<?>> dataflowTaskLauchRequestTransformer() {
-		return message -> {
-			DataFlowTaskLaunchRequest taskLaunchRequest = new DataFlowTaskLaunchRequest();
-			taskLaunchRequest.setCommandlineArguments(getCommandLineArgs(message));
-			taskLaunchRequest.setDeploymentProperties(getDeploymentProperties());
-			taskLaunchRequest.setApplicationName(sftpSourceTaskProperties.getApplicationName());
-			return MessageBuilder.withPayload(taskLaunchRequest)
-				.copyHeaders(message.getHeaders())
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
-		};
-	}
-
 
 	private Map<String, String> getEnvironmentProperties() {
 		Map<String, String> environmentProperties = new HashMap<>();
@@ -207,42 +183,6 @@ public class SftpSourceTaskLauncherConfiguration {
 		commandLineArgs.addAll(sftpSourceTaskProperties.getParameters());
 
 		return commandLineArgs;
-	}
-
-	static class DataFlowTaskLaunchRequest {
-		@JsonProperty("args")
-		private List<String> commandlineArguments = new ArrayList<>();
-		@JsonProperty("deploymentProps")
-		private Map<String, String> deploymentProperties = new HashMap<>();
-		@JsonProperty("name")
-		private String applicationName;
-
-		public List<String> getCommandlineArguments() {
-			return commandlineArguments;
-		}
-
-		public void setCommandlineArguments(List<String> commandlineArguments) {
-			Assert.notNull(commandlineArguments, "'commandLineArguments' cannot be null.");
-			this.commandlineArguments = commandlineArguments;
-		}
-
-		public Map<String, String> getDeploymentProperties() {
-			return deploymentProperties;
-		}
-
-		public void setDeploymentProperties(Map<String, String> deploymentProperties) {
-			Assert.notNull(commandlineArguments, "'deploymentProperties' cannot be null.");
-			this.deploymentProperties = deploymentProperties;
-		}
-
-		public String getApplicationName() {
-			return applicationName;
-		}
-
-		public void setApplicationName(String applicationName) {
-			Assert.hasText(applicationName, "'applicationName' cannot be blank.");
-			this.applicationName = applicationName;
-		}
 	}
 
 }

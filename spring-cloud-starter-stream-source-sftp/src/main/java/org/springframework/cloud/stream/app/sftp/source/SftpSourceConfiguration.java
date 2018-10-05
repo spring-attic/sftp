@@ -1,10 +1,11 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2018 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Consumer;
 
+import com.jcraft.jsch.ChannelSftp.LsEntry;
 import org.aopalliance.aop.Advice;
 
 import org.springframework.beans.BeanUtils;
@@ -32,8 +34,10 @@ import org.springframework.cloud.stream.app.file.FileConsumerProperties;
 import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.TaskLaunchRequestType;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
+import org.springframework.cloud.stream.app.sftp.common.source.ListFilesRotator;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.source.metadata.SftpSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
@@ -75,8 +79,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
-import com.jcraft.jsch.ChannelSftp.LsEntry;
-
 /**
  * @author Gary Russell
  * @author Artem Bilan
@@ -85,10 +87,10 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
  * @author David Turanski
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class })
+@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class,
+	TriggerPropertiesMaxMessagesDefaultUnlimited.class })
 @Import({ TriggerConfiguration.class,
 		SftpSourceSessionFactoryConfiguration.class,
-		TriggerPropertiesMaxMessagesDefaultUnlimited.class,
 		SftpSourceIdempotentReceiverConfiguration.class,
 		SftpSourceTaskLauncherConfiguration.class })
 public class SftpSourceConfiguration {
@@ -160,8 +162,7 @@ public class SftpSourceConfiguration {
 								: consumerSpec(this.fileSourceRotator)),
 					fileConsumerProperties);
 		}
-		else if (properties.isListOnly() || properties.getTaskLauncherOutput() != SftpSourceProperties
-				.TaskLaunchRequestType.NONE) {
+		else if (properties.isListOnly() || properties.isTaskLauncherOutput()) {
 			return listingFlow(sftpSessionFactory);
 		}
 		else {
@@ -218,7 +219,7 @@ public class SftpSourceConfiguration {
 				.handle(Sftp.outboundGateway(this.delegatingSessionFactory.getFactory(),
 						AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
 						.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()));
-		if (this.properties.getTaskLauncherOutput() != TaskLaunchRequestType.NONE) {
+		if (this.properties.isTaskLauncherOutput()) {
 			flow.enrichHeaders(this.listFilesRotator.headers());
 		}
 		return flow

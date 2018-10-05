@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source;
+package org.springframework.cloud.stream.app.sftp.common.source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +26,7 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties.Factory;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
-import org.springframework.cloud.stream.app.sftp.source.tasklauncher.SftpSourceTaskLauncherConfiguration;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.integration.aop.AbstractMessageSourceAdvice;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.expression.FunctionExpression;
@@ -36,15 +34,21 @@ import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyD
 import org.springframework.integration.file.remote.session.DelegatingSessionFactory;
 import org.springframework.messaging.Message;
 
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_HOST_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PORT_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_USERNAME_PROPERTY_KEY;
+
 /**
  * An {@link AbstractMessageSourceAdvice} for listing files on multiple
  * directories/servers.
  *
  * @author Gary Russell
+ * @author David Turanski
  * @since 2.0
- *
  */
-class ListFilesRotator extends AbstractMessageSourceAdvice {
+public class ListFilesRotator extends AbstractMessageSourceAdvice {
 
 	private static final Log logger = LogFactory.getLog(ListFilesRotator.class);
 
@@ -62,7 +66,7 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 
 	private volatile KeyDirectory current;
 
-	ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
+	public ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
 		this.properties = properties;
 		this.sessionFactory = factory.getFactory();
 		if (properties.isMultiSource()) {
@@ -73,8 +77,8 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 	}
 
 	public Map<String, Object> headers() {
-		Supplier<Factory> factory = () -> {
-			Factory selected = this.properties.getFactories().get(this.current.getKey());
+		Supplier<SftpSourceProperties.Factory> factory = () -> {
+			SftpSourceProperties.Factory selected = this.properties.getFactories().get(this.current.getKey());
 			if (selected == null) {
 				// missing key used default factory
 				selected = this.properties.getFactory();
@@ -82,16 +86,11 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 			return selected;
 		};
 		Map<String, Object> map = new HashMap<>();
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_SELECTED_SERVER_PROPERTY_KEY,
-				new FunctionExpression<>(m -> this.current.getKey()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_HOST_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getHost()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_PORT_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getPort()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_USERNAME_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getUsername()));
-		map.put(SftpSourceTaskLauncherConfiguration.SFTP_PASSWORD_PROPERTY_KEY,
-				new FunctionExpression<>(m -> factory.get().getPassword()));
+		map.put(SFTP_SELECTED_SERVER_PROPERTY_KEY, new FunctionExpression<>(m -> this.current.getKey()));
+		map.put(SFTP_HOST_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getHost()));
+		map.put(SFTP_PORT_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getPort()));
+		map.put(SFTP_USERNAME_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getUsername()));
+		map.put(SFTP_PASSWORD_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getPassword()));
 		return map;
 	}
 
@@ -123,9 +122,7 @@ class ListFilesRotator extends AbstractMessageSourceAdvice {
 		this.sessionFactory.clearThreadKey();
 		boolean noFilesReceived = message.getPayload().size() == 0;
 		if (logger.isTraceEnabled()) {
-			logger.trace("Poll produced "
-					+ (noFilesReceived ? "no" : "")
-					+ " files");
+			logger.trace("Poll produced " + (noFilesReceived ? "no" : "") + " files");
 		}
 		if (!this.fair && noFilesReceived) {
 			rotate();

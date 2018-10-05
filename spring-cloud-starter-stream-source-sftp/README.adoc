@@ -4,8 +4,7 @@
 This source app supports transfer of files using the SFTP protocol.
 Files are transferred from the `remote` directory to the `local` directory where the application is deployed.
 
-Messages emitted by the source are provided as a byte array by default. However, this can be
-customized using the `--mode` option:
+Messages emitted by the source are provided as a byte array by default. However, this can be customized using the `--mode` option:
 
 - *ref* Provides a `java.io.File` reference
 - *lines* Will split files line-by-line and emit a new message for each line
@@ -13,11 +12,38 @@ customized using the `--mode` option:
 
 When using `--mode=lines`, you can also provide the additional option `--withMarkers=true`.
 If set to `true`, the underlying `FileSplitter` will emit additional _start-of-file_ and _end-of-file_ marker messages before and after the actual data.
-The payload of these 2 additional marker messages is of type `FileSplitter.FileMarker`. The option `withMarkers` defaults to `false` if not explicitly set.
+The payload of these 2 additional marker messages is of type `FileSplitter.FileMarker`.
+The option `withMarkers` defaults to `false` if not explicitly set.
 
 When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
 
-See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
+See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `SftpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the SFTP Source.
+
+== Multiple SFTP Servers
+This source supports polling multiple sftp servers. This requires configuring multiple session factories.
+The following configuration will poll two sftp servers, consuming files in a round-robin fashion:
+
+```
+sftp.factories.one.host=host1
+sftp.factories.one.port=1234,
+sftp.factories.one.username = user1,
+sftp.factories.one.password = pass1,
+...
+sftp.factories.two.host=host2,
+sftp.factories.two.port=2345,
+sftp.factories.two.username = user2,
+sftp.factories.two.password = pass2,
+sftp.directories=one.sftpSource,two.sftpSecondSource,
+sftp.max-fetch=1,
+sftp.fair=true
+```
+---
+
+NOTE: The TaskLaunchRequest output functionality is currently supported here for legacy reasons.
+If you are interested in this feature, we recommend using the link:../spring-cloud-starter-stream-source-sftp-dataflow/README.adoc[sftp-datafow-source] which is intended specifically for this use case.
+A task launch request posted to the Data Flow Server API is much simpler to use than the `TaskLaunchRequest` supported by this app which supports launching tasks using one of the provided platform specific task launchers.
+Using a platform specific task launcher makes it possible to launch tasks when a Data Flow server is not deployed, but requires several additional configuration parameters.
+
 
 == Input
 
@@ -67,7 +93,7 @@ None.
 
 A `java.io.File` object.
 
-=== task-launcher-output = STANDALONE
+=== task-launcher-output = true
 
 ==== Headers:
 
@@ -76,8 +102,7 @@ A `java.io.File` object.
 
 ==== Payload:
 
-A https://docs.spring.io/spring-cloud-task/docs/current/apidocs/org/springframework/cloud/task/launcher/TaskLaunchRequest.html[TaskLaunchRequest] object.
-with the following set as command line arguments (also bound to job parameters for Spring Batch):
+A https://docs.spring.io/spring-cloud-task/docs/current/apidocs/org/springframework/cloud/task/launcher/TaskLaunchRequest.html[TaskLaunchRequest] object with the following set as command line arguments (also bound to job parameters for Spring Batch):
 
 * `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
 * `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
@@ -85,29 +110,7 @@ with the following set as command line arguments (also bound to job parameters f
 
 `task.resource-uri` is required.
 `task.deployment-properties` and `task.environment-properties` are optional.
-`task.application-name` is ignored and will be generated.
 
-=== task-launcher-output = DATAFLOW
-
-==== Headers:
-
-* `Content-Type: application/json`
-* `file_remoteDirectory: <java.lang.String>`
-
-==== Payload:
-
-A DataFlow Task Launch request as JSON: `{"name":"<task.application-name>", "deploymentProps":{"key"="val",...},
-"args":[]}`
-with the following set as command line arguments (also bound to job parameters for Spring Batch):
-
-* `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
-* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
-*  Any provided`task.parameters`
-
-`task.resource-uri` is ignored (already registered in Data Flow Server).
-`task.environment-properties` is ignored (configured is Data Flow Server).
-`task.deployment-properties` is optional.
-`task.application-name` is required (the Data Flow Task Name).
 
 == Options
 
@@ -139,8 +142,8 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.task-launcher-output$$:: $$Set to create output suitable for a task launch request. Default is `NONE`$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `DATAFLOW`,`STANDALONE`,`NONE`)*
-$$sftp.task.application-name$$:: $$The task application name (required for DATAFLOW launch request).$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task-launcher-output$$:: $$Set to true to create output suitable for a task launch request.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.task.application-name$$:: $$The task application name.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
 $$sftp.task.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*

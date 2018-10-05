@@ -1,10 +1,11 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2018 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source;
+package org.springframework.cloud.stream.app.sftp.common.source;
 
 import java.io.File;
 
@@ -21,6 +22,8 @@ import org.junit.Test;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration;
 import org.springframework.cloud.stream.config.SpelExpressionConverterConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -146,17 +149,17 @@ public class SftpSourcePropertiesTests {
 	@Test
 	public void taskLauncherOutputCanBeCustomized() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		testPropertyValues(context, "sftp.taskLauncherOutput:STANDALONE");
+		testPropertyValues(context, "sftp.taskLauncherOutput=true");
 		context.register(Conf.class);
 		context.refresh();
 		SftpSourceProperties properties = context.getBean(SftpSourceProperties.class);
-		assertTrue(properties.getTaskLauncherOutput() == SftpSourceProperties.TaskLaunchRequestType.STANDALONE);
+		assertTrue(properties.isTaskLauncherOutput());
 	}
 
 	@Test(expected = AssertionError.class)
 	public void onlyAllowListOnlyOrTaskLauncherOutputEnabled() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		testPropertyValues(context, "sftp.listOnly:true", "sftp.taskLauncherOutput:STANDALONE");
+		testPropertyValues(context, "sftp.listOnly:true", "sftp.taskLauncherOutput=true");
 		context.register(Conf.class);
 
 		try {
