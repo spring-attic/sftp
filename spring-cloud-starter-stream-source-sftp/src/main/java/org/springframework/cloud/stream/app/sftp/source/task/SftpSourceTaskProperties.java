@@ -1,10 +1,11 @@
 /*
  * Copyright 2018 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,9 +34,9 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp.task")
 public class SftpSourceTaskProperties {
 
-	protected static final String DEFAULT_LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
+	public static final String DEFAULT_LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
 
-	protected static final String DEFAULT_REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
+	public static final String DEFAULT_REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
 
 	/**
 	 * The URI of the task artifact to be applied to the TaskLaunchRequest.
@@ -92,7 +93,7 @@ public class SftpSourceTaskProperties {
 
 	/**
 	 *
-	 * The task application name (required for DATAFLOW launch request).
+	 * The task application name.
 	 */
 	private String applicationName;
 

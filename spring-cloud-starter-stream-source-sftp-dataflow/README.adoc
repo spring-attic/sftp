@@ -1,0 +1,109 @@
+//tag::ref-doc[]
+= SFTP Data Flow Source
+
+This is a specialized version of the `sftp` source which always outputs a Data Flow Task Launch Request as JSON,
+compatible with the `tasklauncher-data-flow` sink.
+
+NOTE: Task Launch Request posted to the Data Flow Server API is much simpler to use than the `TaskLaunchRequest`
+supported by the original `sftp` source, designed to launch tasks using one of the provided platform specific task
+launchers. This makes it possible to launch tasks when a Data Flow server is not present, but requires several
+additional configuration parameters.
+
+This source transfers files using the SFTP protocol from the `remote` directory to the `local` directory where the application is deployed.
+
+NOTE: For a cloud platform such as (Cloud Foundry 2.3+ or Kubernetes), it is recommended that the local directory
+reference a shared mount path provided by platform volume services which can be accessed by the launched task container.
+
+Optionally, if 'list-only=true', the Task Launch Request provides command line arguments to enable the launched task
+to access the remote file from the sftp server. Using a local or shared volume is the recommended approach.
+The 'list-only` option is only provided as a fallback for cases in which a shared volume is not an option.
+
+
+When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
+
+See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
+
+== Input
+
+N/A (Fetches files from an SFTP server).
+
+== Output
+
+==== Headers:
+
+* `Content-Type: application/json`
+
+==== Payload:
+
+A DataFlow Task Launch request as JSON: `{"name":"<task-name>", "deploymentProps":{"key"="val",...},
+"args":[]}`
+with the following set as command line arguments (also bound to job parameters for Spring Batch):
+
+* `<sftp.task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
+
+if `list-only=true`,
+* `<sftp.task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>` and sftp connection
+args,
+
+*  Any provided `task.launch.request.args`
+
+* `task.launch.request.task-name` is required (the Data Flow task name).
+
+== Options
+
+The **$$sftp$$** $$source$$ has the following options:
+
+//tag::configuration-properties[]
+$$sftp.auto-create-local-dir$$:: $$Set to true to create the local directory if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
+$$sftp.delete-remote-files$$:: $$Set to true to delete remote files after successful transfer.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.directories$$:: $$A list of factory "name.directory" pairs.$$ *($$String[]$$, default: `$$<none>$$`)*
+$$sftp.factories$$:: $$A map of factory names to factories.$$ *($$Map<String, Factory>$$, default: `$$<none>$$`)*
+$$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
+$$sftp.factory.host$$:: $$The host name of the server.$$ *($$String$$, default: `$$localhost$$`)*
+$$sftp.factory.known-hosts-expression$$:: $$A SpEL expression resolving to the location of the known hosts file.$$ *($$Expression$$, default: `$$<none>$$`)*
+$$sftp.factory.pass-phrase$$:: $$Passphrase for user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
+$$sftp.factory.password$$:: $$The password to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.factory.port$$:: $$The port of the server.$$ *($$Integer$$, default: `$$22$$`)*
+$$sftp.factory.private-key$$:: $$Resource location of user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
+$$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.fair$$:: $$True for fair polling of multiple servers/directories.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.filename-pattern$$:: $$A filter pattern to match the names of files to transfer.$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.filename-regex$$:: $$A filter regex pattern to match the names of files to transfer.$$ *($$Pattern$$, default: `$$<none>$$`)*
+$$sftp.list-only$$:: $$Set to true to return file metadata without the entire payload.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
+$$sftp.max-fetch$$:: $$The maximum number of remote files to fetch per poll; default unlimited. Does not apply when listing files or building task launch requests.$$ *($$Integer$$, default: `$$<none>$$`)*
+$$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
+$$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
+$$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
+$$task.launch.request.args$$:: $$Comma separated list of optional args in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
+$$task.launch.request.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$task.launch.request.task-name$$:: $$The Data Flow task name.$$ *($$String$$, default: `$$<none>$$`)*
+$$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
+$$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*
+$$trigger.fixed-delay$$:: $$Fixed delay for periodic triggers.$$ *($$Integer$$, default: `$$1$$`)*
+$$trigger.initial-delay$$:: $$Initial delay for periodic triggers.$$ *($$Integer$$, default: `$$0$$`)*
+$$trigger.max-messages$$:: $$Maximum messages per poll, -1 means infinity.$$ *($$Long$$, default: `$$-1$$`)*
+$$trigger.time-unit$$:: $$The TimeUnit to apply to delay values.$$ *($$TimeUnit$$, default: `$$SECONDS$$`, possible values: `NANOSECONDS`,`MICROSECONDS`,`MILLISECONDS`,`SECONDS`,`MINUTES`,`HOURS`,`DAYS`)*
+//end::configuration-properties[]
+
+== Build
+
+```
+$ ./mvnw clean install -PgenerateApps
+$ cd apps
+```
+You can find the corresponding binder based projects here.
+You can then cd into one one of the folders and build it:
+```
+$ ./mvnw clean package
+```
+
+== Examples
+
+```
+java -jar sftp_dataflow_source.jar --task.launch.request.task-name=myTask --sftp.remote-dir=foo --trigger
+.fixed-delay=60 \
+         --sftp.factory.host=sftpserver --sftp.factory.username=user --sftp.factory.password=pw --sftp.local-dir=/foo
+```
+//end::ref-doc[]

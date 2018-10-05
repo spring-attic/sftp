@@ -67,7 +67,7 @@ None.
 
 A `java.io.File` object.
 
-=== task-launcher-output = STANDALONE
+=== task-launcher-output = true
 
 ==== Headers:
 
@@ -85,29 +85,7 @@ with the following set as command line arguments (also bound to job parameters f
 
 `task.resource-uri` is required.
 `task.deployment-properties` and `task.environment-properties` are optional.
-`task.application-name` is ignored and will be generated.
 
-=== task-launcher-output = DATAFLOW
-
-==== Headers:
-
-* `Content-Type: application/json`
-* `file_remoteDirectory: <java.lang.String>`
-
-==== Payload:
-
-A DataFlow Task Launch request as JSON: `{"name":"<task.application-name>", "deploymentProps":{"key"="val",...},
-"args":[]}`
-with the following set as command line arguments (also bound to job parameters for Spring Batch):
-
-* `<task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
-* `<task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>`
-*  Any provided`task.parameters`
-
-`task.resource-uri` is ignored (already registered in Data Flow Server).
-`task.environment-properties` is ignored (configured is Data Flow Server).
-`task.deployment-properties` is optional.
-`task.application-name` is required (the Data Flow Task Name).
 
 == Options
 
@@ -139,8 +117,8 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.stream$$:: $$Set to true to stream the file rather than copy to a local directory.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.task-launcher-output$$:: $$Set to create output suitable for a task launch request. Default is `NONE`$$ *($$TaskLaunchRequestType$$, default: `$$<none>$$`, possible values: `DATAFLOW`,`STANDALONE`,`NONE`)*
-$$sftp.task.application-name$$:: $$The task application name (required for DATAFLOW launch request).$$ *($$String$$, default: `$$<none>$$`)*
+$$sftp.task-launcher-output$$:: $$Set to true to create output suitable for a task launch request.$$ *($$Boolean$$, default: `$$false$$`)*
+$$sftp.task.application-name$$:: $$The task application name.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.data-source-password$$:: $$The datasource password to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.data-source-url$$:: $$The datasource url to be applied to the TaskLaunchRequest. Defaults to h2 in-memory JDBC datasource url.$$ *($$String$$, default: `$$jdbc:h2:tcp://localhost:19092/mem:dataflow$$`)*
 $$sftp.task.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
