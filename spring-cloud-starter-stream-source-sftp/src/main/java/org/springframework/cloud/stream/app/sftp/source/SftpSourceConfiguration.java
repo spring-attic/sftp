@@ -89,7 +89,6 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
 	TriggerPropertiesMaxMessagesDefaultUnlimited.class })
 @Import({ TriggerConfiguration.class,
 		SftpSourceSessionFactoryConfiguration.class,
-		TriggerPropertiesMaxMessagesDefaultUnlimited.class,
 		SftpSourceIdempotentReceiverConfiguration.class,
 		SftpSourceTaskLauncherConfiguration.class })
 public class SftpSourceConfiguration {
