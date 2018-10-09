@@ -85,7 +85,8 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
  * @author David Turanski
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class })
+@EnableConfigurationProperties({ SftpSourceProperties.class, FileConsumerProperties.class,
+	TriggerPropertiesMaxMessagesDefaultUnlimited.class })
 @Import({ TriggerConfiguration.class,
 		SftpSourceSessionFactoryConfiguration.class,
 		TriggerPropertiesMaxMessagesDefaultUnlimited.class,

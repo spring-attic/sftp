@@ -5,6 +5,9 @@ To learn more about this application and the supported properties, please review
 ## SFTP Source
 include::spring-cloud-starter-stream-source-sftp/README.adoc[]
 
+## SFTP Dataflow Source
+include::spring-cloud-starter-stream-source-sftp-dataflow/README.adoc[]
+
 ## SFTP Sink
 include::spring-cloud-starter-stream-sink-sftp/README.adoc[]
 

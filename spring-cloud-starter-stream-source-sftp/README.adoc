@@ -19,6 +19,35 @@ When configuring the `sftp.factory.known-hosts-expression` option, the root obje
 
 See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
 
+== Multiple SFTP Servers
+This source supports polling multiple sftp servers. This requires configuring multiple session factories. The
+following configuration will poll two sftp servers, consuming files in a round-robin fashion:
+
+```
+sftp.factories.one.host=host1
+sftp.factories.one.port=1234,
+sftp.factories.one.username = user1,
+sftp.factories.one.password = pass1,
+...
+sftp.factories.two.host=host2,
+sftp.factories.two.port=2345,
+sftp.factories.two.username = user2,
+sftp.factories.two.password = pass2,
+sftp.directories=one.sftpSource,two.sftpSecondSource,
+sftp.max-fetch=1,
+sftp.fair=true
+```
+---
+
+NOTE: The TaskLaunchRequest output functionality is currently supported here for legacy reasons. If you are
+interested in this feature, we recommend using the
+link:../spring-cloud-starter-stream-source-sftp-dataflow/README.adoc[sftp-datafow-source] which is intended
+specifically for this use case. A task launch request posted to the Data Flow Server API is much simpler to use than the `TaskLaunchRequest`
+supported by this app which supports launching tasks using one of the provided platform specific task
+launchers. Using a platform specific task launcher makes it possible to launch tasks when a Data Flow server is not
+deployed, but requires several additional configuration parameters.
+
+
 == Input
 
 N/A (Fetches files from an SFTP server).

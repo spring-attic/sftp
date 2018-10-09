@@ -2,17 +2,20 @@
 = SFTP Data Flow Source
 
 This is a specialized version of the `sftp` source which always outputs a Data Flow Task Launch Request as JSON,
-compatible with the `tasklauncher-data-flow` sink.
+compatible with the https://github.com/spring-cloud-stream-app-starters/tasklauncher-data-flow[tasklauncher-data-flow
+] sink.
 
-NOTE: Task Launch Request posted to the Data Flow Server API is much simpler to use than the `TaskLaunchRequest`
+NOTE: A task launch request posted to the Data Flow Server API is much simpler to use than the `TaskLaunchRequest`
 supported by the original `sftp` source, designed to launch tasks using one of the provided platform specific task
-launchers. This makes it possible to launch tasks when a Data Flow server is not present, but requires several
-additional configuration parameters.
+launchers. Using a platform specific task launcher makes it possible to launch tasks when a Data Flow server is not
+deployed, but requires several additional configuration parameters.
 
 This source transfers files using the SFTP protocol from the `remote` directory to the `local` directory where the application is deployed.
 
-NOTE: For a cloud platform such as (Cloud Foundry 2.3+ or Kubernetes), it is recommended that the local directory
-reference a shared mount path provided by platform volume services which can be accessed by the launched task container.
+NOTE: When running on a cloud platform such as (Cloud Foundry 2.3+ or Kubernetes), it is recommended that the local
+directory
+reference a shared mount path provided by platform volume services which can also be accessed from the launched task
+container.
 
 Optionally, if 'list-only=true', the Task Launch Request provides command line arguments to enable the launched task
 to access the remote file from the sftp server. Using a local or shared volume is the recommended approach.
@@ -22,6 +25,25 @@ The 'list-only` option is only provided as a fallback for cases in which a share
 When configuring the `sftp.factory.known-hosts-expression` option, the root object of the evaluation is the application context, an example might be `sftp.factory.known-hosts-expression = @systemProperties['user.home'] + '/.ssh/known_hosts'`.
 
 See also https://github.com/spring-cloud-stream-app-starters/core/blob/master/common/app-starters-metadata-store-common/README.adoc[`MetadataStore`] options for possible shared persistent store configuration for the `FtpPersistentAcceptOnceFileListFilter` and `IdempotentReceiverInterceptor` used in the FTP Source.
+
+== Multiple SFTP Servers
+This source supports polling multiple sftp servers. This requires configuring multiple session factories. The
+following configuration will poll two sftp servers, consuming files in a round-robin fashion.
+
+```
+sftp.factories.one.host=host1
+sftp.factories.one.port=1234,
+sftp.factories.one.username = user1,
+sftp.factories.one.password = pass1,
+...
+sftp.factories.two.host=host2,
+sftp.factories.two.port=2345,
+sftp.factories.two.username = user2,
+sftp.factories.two.password = pass2,
+sftp.directories=one.sftpSource,two.sftpSecondSource,
+sftp.max-fetch=1,
+sftp.fair=true
+```
 
 == Input
 
@@ -39,11 +61,11 @@ A DataFlow Task Launch request as JSON: `{"name":"<task-name>", "deploymentProps
 "args":[]}`
 with the following set as command line arguments (also bound to job parameters for Spring Batch):
 
-* `<sftp.task.local-file-path-parameter-name>`=`<task.local-file-path-parameter-value>`
+* `localFilePath`=the local file path
 
 if `list-only=true`,
-* `<sftp.task.remote-file-path-parameter-name>`=`<task.remote-file-path-parameter-value>` and sftp connection
-args,
+
+* `remoteFilePath`= the remote file path, plus sftp connection parameters
 
 *  Any provided `task.launch.request.args`
 
@@ -51,7 +73,7 @@ args,
 
 == Options
 
-The **$$sftp$$** $$source$$ has the following options:
+The **$$sftp dataflow$$** $$source$$ has the following options:
 
 //tag::configuration-properties[]
 $$sftp.auto-create-local-dir$$:: $$Set to true to create the local directory if it does not exist.$$ *($$Boolean$$, default: `$$true$$`)*
