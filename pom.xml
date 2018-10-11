@@ -98,7 +98,7 @@
 			</repositories>
 			<pluginRepositories>
 				<pluginRepository>
-					<id>spring-releases></id>
+					<id>spring-releases</id>
 					<name>Spring Releases</name>
 					<url>http://repo.spring.io/libs-release</url>
 				</pluginRepository>
