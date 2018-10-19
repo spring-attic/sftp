@@ -37,6 +37,7 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
  * Session factory configuration.
  *
  * @author Gary Russell
+ * @author Artem Bilan
  *
  */
 public class SftpSourceSessionFactoryConfiguration {
@@ -64,7 +65,7 @@ public class SftpSourceSessionFactoryConfiguration {
 	}
 
 	static SessionFactory<LsEntry> buildFactory(BeanFactory beanFactory, Factory factory) {
-		DefaultSftpSessionFactory sftpSessionFactory = new DefaultSftpSessionFactory();
+		DefaultSftpSessionFactory sftpSessionFactory = new DefaultSftpSessionFactory(true);
 		sftpSessionFactory.setHost(factory.getHost());
 		sftpSessionFactory.setPort(factory.getPort());
 		sftpSessionFactory.setUser(factory.getUsername());
@@ -74,13 +75,8 @@ public class SftpSourceSessionFactoryConfiguration {
 			sftpSessionFactory.setKnownHosts(factory.getKnownHostsExpression()
 					.getValue(IntegrationContextUtils.getEvaluationContext(beanFactory), String.class));
 		}
-		if (factory.getCacheSessions() != null) {
-			CachingSessionFactory<LsEntry> csf = new CachingSessionFactory<>(sftpSessionFactory);
-			return csf;
-		}
-		else {
-			return sftpSessionFactory;
-		}
+
+		return sftpSessionFactory;
 	}
 
 	final static class DelegatingFactoryWrapper implements DisposableBean {

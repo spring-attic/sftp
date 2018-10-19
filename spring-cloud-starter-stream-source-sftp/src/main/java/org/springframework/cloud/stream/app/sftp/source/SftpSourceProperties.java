@@ -311,11 +311,6 @@ public class SftpSourceProperties {
 		private String password;
 
 		/**
-		 * Cache sessions
-		 */
-		private Boolean cacheSessions;
-
-		/**
 		 * The port of the server.
 		 */
 		private int port = 22;
@@ -364,14 +359,6 @@ public class SftpSourceProperties {
 
 		public void setPassword(String password) {
 			this.password = password;
-		}
-
-		public Boolean getCacheSessions() {
-			return this.cacheSessions;
-		}
-
-		public void setCacheSessions(Boolean cacheSessions) {
-			this.cacheSessions = cacheSessions;
 		}
 
 		@Range(min = 0, max = 65535)

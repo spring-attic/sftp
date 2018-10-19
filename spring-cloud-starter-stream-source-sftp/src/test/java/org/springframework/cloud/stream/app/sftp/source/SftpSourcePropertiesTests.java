@@ -199,7 +199,7 @@ public class SftpSourcePropertiesTests {
 		context.register(Factory.class);
 		context.refresh();
 		SessionFactory<?> sessionFactory = context.getBean(SessionFactory.class);
-		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "sessionFactory.knownHosts"),
+		assertThat((String) TestUtils.getPropertyValue(sessionFactory, "knownHosts"),
 			endsWith("/.ssh/known_hosts"));
 		context.close();
 	}

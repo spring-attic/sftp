@@ -122,7 +122,6 @@ $$sftp.delete-remote-files$$:: $$Set to true to delete remote files after succes
 $$sftp.directories$$:: $$A list of factory "name.directory" pairs.$$ *($$String[]$$, default: `$$<none>$$`)*
 $$sftp.factories$$:: $$A map of factory names to factories.$$ *($$Map<String, Factory>$$, default: `$$<none>$$`)*
 $$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.factory.host$$:: $$The host name of the server.$$ *($$String$$, default: `$$localhost$$`)*
 $$sftp.factory.known-hosts-expression$$:: $$A SpEL expression resolving to the location of the known hosts file.$$ *($$Expression$$, default: `$$<none>$$`)*
 $$sftp.factory.pass-phrase$$:: $$Passphrase for user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
