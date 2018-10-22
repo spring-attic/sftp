@@ -39,10 +39,6 @@
 			<artifactId>app-starters-trigger-unlimited-common</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-core</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.cloud.stream.app</groupId>
 			<artifactId>app-starters-file-common</artifactId>
 		</dependency>
@@ -56,6 +52,10 @@
 			<artifactId>spring-integration-hazelcast</artifactId>
 			<version>1.0.0.RELEASE</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud.stream.app</groupId>
+			<artifactId>sftp-app-starters-source-common</artifactId>
 		</dependency>
 	</dependencies>
 

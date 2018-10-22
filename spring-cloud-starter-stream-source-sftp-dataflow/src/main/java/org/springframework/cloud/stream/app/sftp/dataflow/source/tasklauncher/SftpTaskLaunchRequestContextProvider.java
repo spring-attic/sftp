@@ -24,9 +24,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.app.file.remote.FilePathUtils;
-import org.springframework.cloud.stream.app.sftp.source.ListFilesRotator;
-import org.springframework.cloud.stream.app.sftp.source.SftpHeaders;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.ListFilesRotator;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestContext;
 import org.springframework.integration.expression.FunctionExpression;
 import org.springframework.integration.handler.MessageProcessor;
@@ -43,6 +43,7 @@ import org.springframework.util.StringUtils;
  **/
 
 public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Message> {
+
 	private final static Log log = LogFactory.getLog(SftpTaskLaunchRequestContextProvider.class);
 
 	public static final String LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
@@ -50,6 +51,7 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 	public static final String REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
 
 	private final SftpSourceProperties sourceProperties;
+
 	private final ListFilesRotator listFilesRotator;
 
 	public SftpTaskLaunchRequestContextProvider(
@@ -74,7 +76,6 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 
 		TaskLaunchRequestContext taskLaunchRequestContext = new TaskLaunchRequestContext();
 
-
 		addRemoteFileCommandLineArgs(taskLaunchRequestContext, message);
 		if (sourceProperties.isListOnly()) {
 			addSftpConnectionInfoToTaskCommandLineArgs(taskLaunchRequestContext, message);
@@ -82,7 +83,6 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		else {
 			addLocalFileCommandLineArgs(taskLaunchRequestContext, message);
 		}
-
 
 		return adjustMessageHeaders(taskLaunchRequestContext, builder).build();
 	}
@@ -116,7 +116,8 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 		}
 	}
 
-	private MessageBuilder adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext, MessageBuilder builder) {
+	private MessageBuilder adjustMessageHeaders(TaskLaunchRequestContext taskLaunchRequestContext,
+		MessageBuilder builder) {
 
 		builder.setHeader(TaskLaunchRequestContext.HEADER_NAME, taskLaunchRequestContext);
 		if (listFilesRotator != null) {

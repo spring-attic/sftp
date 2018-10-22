@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source;
+package org.springframework.cloud.stream.app.sftp.common.source;
 
 /**
  * @author David Turanski

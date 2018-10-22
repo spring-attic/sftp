@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.app.sftp.source;
+package org.springframework.cloud.stream.app.sftp.common.source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.integration.aop.AbstractMessageSourceAdvice;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.expression.FunctionExpression;
@@ -34,11 +34,11 @@ import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyD
 import org.springframework.integration.file.remote.session.DelegatingSessionFactory;
 import org.springframework.messaging.Message;
 
-import static org.springframework.cloud.stream.app.sftp.source.SftpHeaders.SFTP_HOST_PROPERTY_KEY;
-import static org.springframework.cloud.stream.app.sftp.source.SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY;
-import static org.springframework.cloud.stream.app.sftp.source.SftpHeaders.SFTP_PORT_PROPERTY_KEY;
-import static org.springframework.cloud.stream.app.sftp.source.SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY;
-import static org.springframework.cloud.stream.app.sftp.source.SftpHeaders.SFTP_USERNAME_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_HOST_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PORT_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_USERNAME_PROPERTY_KEY;
 
 /**
  * An {@link AbstractMessageSourceAdvice} for listing files on multiple

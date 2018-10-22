@@ -20,7 +20,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties;
 
 import static org.junit.Assert.assertEquals;

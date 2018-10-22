@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.app.sftp.dataflow.source;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.function.Consumer;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
@@ -30,12 +29,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
+import org.springframework.cloud.stream.app.sftp.common.source.ListFilesRotator;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.dataflow.source.metadata.SftpDataflowSourceIdempotentReceiverConfiguration;
-import org.springframework.cloud.stream.app.sftp.source.ListFilesRotator;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceProperties;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration;
-import org.springframework.cloud.stream.app.sftp.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpTaskLaunchRequestContextProvider;
 import org.springframework.cloud.stream.app.tasklaunchrequest.DataflowTaskLaunchRequestProperties;
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTransformer;
@@ -64,15 +62,10 @@ import org.springframework.integration.sftp.filters.SftpPersistentAcceptOnceFile
 import org.springframework.integration.sftp.filters.SftpRegexPatternFileListFilter;
 import org.springframework.integration.sftp.filters.SftpSimplePatternFileListFilter;
 import org.springframework.integration.sftp.session.SftpRemoteFileTemplate;
-import org.springframework.integration.transaction.DefaultTransactionSynchronizationFactory;
-import org.springframework.integration.transaction.PseudoTransactionManager;
-import org.springframework.integration.transaction.TransactionSynchronizationProcessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.transaction.interceptor.MatchAlwaysTransactionAttributeSource;
-import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -218,20 +211,6 @@ public class SftpDataflowSourceConfiguration {
 			poller.setAdviceChain(Arrays.asList(advice));
 			return spec -> spec.poller(poller);
 		}
-	}
-
-	private Consumer<SourcePollingChannelAdapterSpec> consumerSpecWithDelete(Advice advice) {
-		final PollerMetadata poller = new PollerMetadata();
-		BeanUtils.copyProperties(this.defaultPoller, poller, "transactionSynchronizationFactory");
-		TransactionSynchronizationProcessor processor = new RemoteFileDeletingTransactionSynchronizationProcessor(
-			this.sftpTemplate, this.properties.getRemoteFileSeparator());
-		poller.setTransactionSynchronizationFactory(new DefaultTransactionSynchronizationFactory(processor));
-		poller.setAdviceChain(Collections.singletonList(
-			new TransactionInterceptor(new PseudoTransactionManager(), new MatchAlwaysTransactionAttributeSource())));
-		if (advice != null) {
-			poller.setAdviceChain(Arrays.asList(advice));
-		}
-		return spec -> spec.poller(poller);
 	}
 
 	@Bean
