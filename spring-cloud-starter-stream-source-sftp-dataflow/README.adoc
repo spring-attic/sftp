@@ -81,7 +81,6 @@ $$sftp.delete-remote-files$$:: $$Set to true to delete remote files after succes
 $$sftp.directories$$:: $$A list of factory "name.directory" pairs.$$ *($$String[]$$, default: `$$<none>$$`)*
 $$sftp.factories$$:: $$A map of factory names to factories.$$ *($$Map<String, Factory>$$, default: `$$<none>$$`)*
 $$sftp.factory.allow-unknown-keys$$:: $$True to allow an unknown or changed key.$$ *($$Boolean$$, default: `$$false$$`)*
-$$sftp.factory.cache-sessions$$:: $$Cache sessions$$ *($$Boolean$$, default: `$$<none>$$`)*
 $$sftp.factory.host$$:: $$The host name of the server.$$ *($$String$$, default: `$$localhost$$`)*
 $$sftp.factory.known-hosts-expression$$:: $$A SpEL expression resolving to the location of the known hosts file.$$ *($$Expression$$, default: `$$<none>$$`)*
 $$sftp.factory.pass-phrase$$:: $$Passphrase for user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
@@ -99,7 +98,7 @@ $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
 $$task.launch.request.args$$:: $$Comma separated list of optional args in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
-$$task.launch.request.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
+$$task.launch.request.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$task.launch.request.task-name$$:: $$The Data Flow task name.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*
