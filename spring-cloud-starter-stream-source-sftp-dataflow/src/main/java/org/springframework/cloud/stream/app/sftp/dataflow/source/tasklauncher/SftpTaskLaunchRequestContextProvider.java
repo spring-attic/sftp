@@ -46,9 +46,9 @@ public class SftpTaskLaunchRequestContextProvider implements MessageProcessor<Me
 
 	private final static Log log = LogFactory.getLog(SftpTaskLaunchRequestContextProvider.class);
 
-	public static final String LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
+	public static final String LOCAL_FILE_PATH_PARAM_NAME = "--localFilePath";
 
-	public static final String REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
+	public static final String REMOTE_FILE_PATH_PARAM_NAME = "--remoteFilePath";
 
 	private final SftpSourceProperties sourceProperties;
 

@@ -34,9 +34,9 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("sftp.task")
 public class SftpSourceTaskProperties {
 
-	public static final String DEFAULT_LOCAL_FILE_PATH_PARAM_NAME = "localFilePath";
+	public static final String DEFAULT_LOCAL_FILE_PATH_PARAM_NAME = "--localFilePath";
 
-	public static final String DEFAULT_REMOTE_FILE_PATH_PARAM_NAME = "remoteFilePath";
+	public static final String DEFAULT_REMOTE_FILE_PATH_PARAM_NAME = "--remoteFilePath";
 
 	/**
 	 * The URI of the task artifact to be applied to the TaskLaunchRequest.

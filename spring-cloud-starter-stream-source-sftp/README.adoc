@@ -149,10 +149,10 @@ $$sftp.task.data-source-url$$:: $$The datasource url to be applied to the TaskLa
 $$sftp.task.data-source-user-name$$:: $$The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"$$ *($$String$$, default: `$$sa$$`)*
 $$sftp.task.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.environment-properties$$:: $$Comma delimited list of environment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<none>$$`)*
-$$sftp.task.local-file-path-parameter-name$$:: $$Value to use as the local file parameter name.$$ *($$String$$, default: `$$localFilePath$$`)*
+$$sftp.task.local-file-path-parameter-name$$:: $$Value to use as the local file parameter name.$$ *($$String$$, default: `$$--localFilePath$$`)*
 $$sftp.task.local-file-path-parameter-value$$:: $$The file path to use as the local file parameter value. Defaults to "java.io.tmpdir".$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.task.parameters$$:: $$Comma separated list of optional parameters in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
-$$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$remoteFilePath$$`)*
+$$sftp.task.remote-file-path-parameter-name$$:: $$Value to use as the remote file parameter name.$$ *($$String$$, default: `$$--remoteFilePath$$`)*
 $$sftp.task.resource-uri$$:: $$The URI of the task artifact to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.tmp-file-suffix$$:: $$The suffix to use while the transfer is in progress.$$ *($$String$$, default: `$$.tmp$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*

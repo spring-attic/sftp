@@ -107,9 +107,9 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 				List<String> commandlineArguments = taskLaunchRequest.getCommandlineArguments();
 				assertEquals("Unexpected number of commandline arguments", 4, commandlineArguments.size());
-				assertEquals("Unexpected remote file path", "remoteFilePath=sftpSource/sftpSource" + i + ".txt",
+				assertEquals("Unexpected remote file path", "--remoteFilePath=sftpSource/sftpSource" + i + ".txt",
 					commandlineArguments.get(0));
-				assertEquals("Unexpected local file path", "localFilePath=/tmp/files/sftpSource" + i + ".txt",
+				assertEquals("Unexpected local file path", "--localFilePath=/tmp/files/sftpSource" + i + ".txt",
 					commandlineArguments.get(1));
 				assertEquals("Unexpected  parameter", "jpk1=jpv1", commandlineArguments.get(2));
 				assertEquals("Unexpected  parameter", "jpk2=jpv2", commandlineArguments.get(3));
@@ -194,11 +194,11 @@ public abstract class SftpSourceTaskLauncherIntegrationTests extends SftpTestSup
 
 				List<String> commandlineArguments = taskLaunchRequest.getCommandlineArguments();
 				assertEquals("Unexpected number of commandline arguments", 4, commandlineArguments.size());
-				assertEquals("Unexpected remote file path", "remoteFilePath=sftp"
+				assertEquals("Unexpected remote file path", "--remoteFilePath=sftp"
 						+ (i == 3 ? "Second" : "")
 						+ "Source/sftpSource" + i + ".txt",
 					commandlineArguments.get(0));
-				assertEquals("Unexpected local file path", "localFilePath=/tmp/files/sftpSource" + i + ".txt",
+				assertEquals("Unexpected local file path", "--localFilePath=/tmp/files/sftpSource" + i + ".txt",
 					commandlineArguments.get(1));
 				assertEquals("Unexpected job parameter", "jpk1=jpv1", commandlineArguments.get(2));
 				assertEquals("Unexpected job parameter", "jpk2=jpv2", commandlineArguments.get(3));
