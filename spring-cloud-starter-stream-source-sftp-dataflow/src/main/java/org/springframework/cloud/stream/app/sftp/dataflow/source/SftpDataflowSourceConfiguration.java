@@ -219,6 +219,7 @@ public class SftpDataflowSourceConfiguration {
 		return new SftpRemoteFileTemplate(properties.isMultiSource() ? wrapper.getFactory() : sftpSessionFactory);
 	}
 
+	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "sftpListInputChannel", outputChannel = "taskLaunchRequestChannel")
 	public Message<?> transformSftpMessage(Message<?> message) {
 
@@ -233,7 +234,6 @@ public class SftpDataflowSourceConfiguration {
 			.build();
 	}
 
-	@IdempotentReceiver("idempotentReceiverInterceptor")
 	@ServiceActivator(inputChannel = "taskLaunchRequestChannel", outputChannel = Source.OUTPUT)
 	public Message<?> transformToTaskLaunchRequestIfNecessary(Message<?> message) {
 		return taskLaunchRequestTransformer
