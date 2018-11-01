@@ -51,7 +51,7 @@ public class SftpDataflowSourceIdempotentReceiverConfiguration {
 				}
 				else if (message.getHeaders().containsKey(FileHeaders.ORIGINAL_FILE)) {
 					File originalFile = (File) message.getHeaders().get(FileHeaders.ORIGINAL_FILE);
-					key = (String.format("%s-%d", originalFile.getAbsolutePath(), originalFile.lastModified()));
+					key = originalFile.getAbsolutePath();
 				}
 				else {
 					key = message.getHeaders().getId().toString();
