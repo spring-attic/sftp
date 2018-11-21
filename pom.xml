@@ -4,24 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>sftp-app-starters-build</artifactId>
 	<version>2.0.3.BUILD-SNAPSHOT</version>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-file</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.jcraft</groupId>
-			<artifactId>jsch</artifactId>
-			<version>0.1.54</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.integration</groupId>
-			<artifactId>spring-integration-sftp</artifactId>
-			<version>5.1.0.BUILD-SNAPSHOT</version>
-			<scope>compile</scope>
-		</dependency>
-	</dependencies>
+
 	<packaging>pom</packaging>
 
 	<parent>
@@ -50,6 +33,23 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-file</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.54</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-sftp</artifactId>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
 	<profiles>
 		<profile>
 			<id>spring</id>
