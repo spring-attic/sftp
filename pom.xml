@@ -33,7 +33,6 @@
 
 	<modules>
 		<module>spring-cloud-starter-stream-source-sftp</module>
-		<!-- <module>spring-cloud-starter-stream-source-sftp-dataflow</module> -->
 		<module>spring-cloud-starter-stream-sink-sftp</module>
 		<module>sftp-app-dependencies</module>
 		<module>sftp-app-starters-test-support</module>
