@@ -36,7 +36,7 @@ import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSession
 import org.springframework.cloud.stream.app.sftp.dataflow.source.metadata.SftpDataflowSourceIdempotentReceiverConfiguration;
 import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpTaskLaunchRequestContextProvider;
 import org.springframework.cloud.stream.app.tasklaunchrequest.DataflowTaskLaunchRequestProperties;
-import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestTransformer;
+import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestFunction;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
 import org.springframework.cloud.stream.messaging.Source;
@@ -109,7 +109,7 @@ public class SftpDataflowSourceConfiguration {
 	SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider;
 
 	@Autowired
-	TaskLaunchRequestTransformer taskLaunchRequestTransformer;
+	TaskLaunchRequestFunction taskLaunchRequest;
 
 	@Autowired
 	DataflowTaskLaunchRequestProperties taskLaunchRequestProperties;
@@ -236,8 +236,7 @@ public class SftpDataflowSourceConfiguration {
 
 	@ServiceActivator(inputChannel = "taskLaunchRequestChannel", outputChannel = Source.OUTPUT)
 	public Message<?> transformToTaskLaunchRequestIfNecessary(Message<?> message) {
-		return taskLaunchRequestTransformer
-			.processMessage(taskLaunchRequestContextProvider.processMessage(message));
+		return taskLaunchRequest.apply(taskLaunchRequestContextProvider.processMessage(message));
 	}
 
 	@Bean

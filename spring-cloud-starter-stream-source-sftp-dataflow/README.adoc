@@ -89,6 +89,7 @@ $$sftp.max-fetch$$:: $$The maximum number of remote files to fetch per poll; def
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
+$$task.launch.request.arg-expressions$$:: $$Comma separated list of option args as SpEL expressions in key=value format.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$task.launch.request.args$$:: $$Comma separated list of optional args in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
 $$task.launch.request.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$task.launch.request.task-name$$:: $$The Data Flow task name.$$ *($$String$$, default: `$$<none>$$`)*
