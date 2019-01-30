@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,8 @@ public class SftpSourceSessionFactoryConfiguration {
 		sftpSessionFactory.setPort(factory.getPort());
 		sftpSessionFactory.setUser(factory.getUsername());
 		sftpSessionFactory.setPassword(factory.getPassword());
+		sftpSessionFactory.setPrivateKey(factory.getPrivateKey());
+		sftpSessionFactory.setPrivateKeyPassphrase(factory.getPassPhrase());
 		sftpSessionFactory.setAllowUnknownKeys(factory.isAllowUnknownKeys());
 		if (factory.getKnownHostsExpression() != null) {
 			sftpSessionFactory.setKnownHosts(factory.getKnownHostsExpression()

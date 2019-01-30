@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.io.Resource;
 import org.springframework.expression.Expression;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyDirectory;
@@ -313,7 +314,7 @@ public class SftpSourceProperties {
 		/**
 		 * Resource location of user's private key.
 		 */
-		private String privateKey = "";
+		private Resource privateKey;
 
 		/**
 		 * Passphrase for user's private key.
@@ -365,11 +366,11 @@ public class SftpSourceProperties {
 			this.port = port;
 		}
 
-		public String getPrivateKey() {
+		public Resource getPrivateKey() {
 			return this.privateKey;
 		}
 
-		public void setPrivateKey(String privateKey) {
+		public void setPrivateKey(Resource privateKey) {
 			this.privateKey = privateKey;
 		}
 

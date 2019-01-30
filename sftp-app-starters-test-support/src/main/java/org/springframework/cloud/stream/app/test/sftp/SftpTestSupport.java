@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 the original author or authors.
+ * Copyright 2015-2019 the original author or authors.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,13 @@
 package org.springframework.cloud.stream.app.test.sftp;
 
 import java.io.File;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.RSAPublicKeySpec;
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
@@ -26,6 +33,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import org.springframework.cloud.stream.app.test.file.remote.RemoteFileTestSupport;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.Base64Utils;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Provides an embedded SFTP Server for test cases.
@@ -46,7 +57,9 @@ public class SftpTestSupport extends RemoteFileTestSupport {
 	@BeforeClass
 	public static void createServer() throws Exception {
 		server = SshServer.setUpDefaultServer();
-		server.setPasswordAuthenticator((username, password, session) -> true);
+		server.setPasswordAuthenticator((username, password, session) ->
+			StringUtils.hasText(password) && !"badPassword".equals(password)); // fail if pub key validation failed
+		server.setPublickeyAuthenticator((username, key, session) -> key.equals(decodePublicKey("id_rsa_pp.pub")));
 		server.setPort(0);
 		server.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("hostkey.ser")));
 		server.setSubsystemFactories(Collections.singletonList(new SftpSubsystemFactory()));
@@ -66,6 +79,42 @@ public class SftpTestSupport extends RemoteFileTestSupport {
 		}
 		System.clearProperty("sftp.factory.port");
 		System.clearProperty("sftp.localDir");
+	}
+
+	private static PublicKey decodePublicKey(String key) {
+		try {
+			InputStream stream = new ClassPathResource(key).getInputStream();
+			byte[] keyBytes = FileCopyUtils.copyToByteArray(stream);
+			// strip any newline chars
+			while (keyBytes[keyBytes.length - 1] == 0x0a || keyBytes[keyBytes.length - 1] == 0x0d) {
+				keyBytes = Arrays.copyOf(keyBytes, keyBytes.length - 1);
+			}
+			byte[] decodeBuffer = Base64Utils.decode(keyBytes);
+			ByteBuffer bb = ByteBuffer.wrap(decodeBuffer);
+			int len = bb.getInt();
+			byte[] type = new byte[len];
+			bb.get(type);
+			if ("ssh-rsa".equals(new String(type))) {
+				BigInteger e = decodeBigInt(bb);
+				BigInteger m = decodeBigInt(bb);
+				RSAPublicKeySpec spec = new RSAPublicKeySpec(m, e);
+				return KeyFactory.getInstance("RSA").generatePublic(spec);
+
+			}
+			else {
+				throw new IllegalArgumentException("Only supports RSA");
+			}
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Failed to determine the test public key", e);
+		}
+	}
+
+	private static BigInteger decodeBigInt(ByteBuffer bb) {
+		int len = bb.getInt();
+		byte[] bytes = new byte[len];
+		bb.get(bytes);
+		return new BigInteger(bytes);
 	}
 
 }
