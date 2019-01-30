@@ -21,6 +21,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.Range;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.io.Resource;
 import org.springframework.expression.Expression;
 import org.springframework.integration.file.support.FileExistsMode;
 import org.springframework.validation.annotation.Validated;
@@ -179,7 +180,7 @@ public class SftpSinkProperties {
 		/**
 		 * Resource location of user's private key.
 		 */
-		private String privateKey = "";
+		private Resource privateKey;
 
 		/**
 		 * Passphrase for user's private key.
@@ -240,11 +241,11 @@ public class SftpSinkProperties {
 			this.port = port;
 		}
 
-		public String getPrivateKey() {
+		public Resource getPrivateKey() {
 			return this.privateKey;
 		}
 
-		public void setPrivateKey(String privateKey) {
+		public void setPrivateKey(Resource privateKey) {
 			this.privateKey = privateKey;
 		}
 
