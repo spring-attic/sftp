@@ -78,7 +78,7 @@ $$sftp.factory.known-hosts-expression$$:: $$A SpEL expression resolving to the l
 $$sftp.factory.pass-phrase$$:: $$Passphrase for user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$sftp.factory.password$$:: $$The password to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.factory.port$$:: $$The port of the server.$$ *($$Integer$$, default: `$$22$$`)*
-$$sftp.factory.private-key$$:: $$Resource location of user's private key.$$ *($$String$$, default: `$$<empty string>$$`)*
+$$sftp.factory.private-key$$:: $$Resource location of user's private key.$$ *($$Resource$$, default: `$$<none>$$`)*
 $$sftp.factory.username$$:: $$The username to use to connect to the server.$$ *($$String$$, default: `$$<none>$$`)*
 $$sftp.fair$$:: $$True for fair polling of multiple servers/directories.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.filename-pattern$$:: $$A filter pattern to match the names of files to transfer.$$ *($$String$$, default: `$$<none>$$`)*
