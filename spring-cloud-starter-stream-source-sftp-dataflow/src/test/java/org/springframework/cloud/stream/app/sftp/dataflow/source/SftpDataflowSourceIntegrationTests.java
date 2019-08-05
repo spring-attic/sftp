@@ -25,17 +25,17 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
-import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpTaskLaunchRequestContextProvider;
+import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpTaskLaunchRequestArgumentsMapper;
+import org.springframework.cloud.stream.app.tasklaunchrequest.DataFlowTaskLaunchRequest;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
@@ -50,6 +50,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -60,7 +63,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
-import static org.springframework.cloud.stream.app.tasklaunchrequest.DataFlowTaskLaunchRequestAutoConfiguration.DataFlowTaskLaunchRequest;
+
 
 /**
  * @author David Turanski
@@ -71,9 +74,10 @@ import static org.springframework.cloud.stream.app.tasklaunchrequest.DataFlowTas
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = { "sftp.remoteDir = sftpSource",
-	"sftp.factory.username = foo", "sftp.factory.password = foo", "sftp.factory.allowUnknownKeys = true",
+	"sftp.factory.username = foo", "sftp.factory.pa" +
+																							"ssword = foo", "sftp.factory.allowUnknownKeys = true",
 	"sftp.filenameRegex = .*", "logging.level.com.jcraft.jsch=WARN",
-	"logging.level.org.springframework.cloud.stream.app.sftp.source=DEBUG", "task.launch.request.task-name=foo" })
+	"logging.level.org.springframework.cloud.stream.app.sftp.source=DEBUG" })
 @DirtiesContext
 public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport {
 
@@ -91,6 +95,7 @@ public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport
 
 	protected final ObjectMapper objectMapper = new ObjectMapper();
 
+	@TestPropertySource(properties = "task.launch.request.task-name=foo")
 	public static class RefTests extends SftpDataflowSourceIntegrationTests {
 
 		@Autowired
@@ -109,7 +114,7 @@ public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport
 
 				String[] pair = payload.getCommandlineArguments().get(0).split("=");
 
-				assertThat(pair[0]).isEqualTo(SftpTaskLaunchRequestContextProvider.LOCAL_FILE_PATH_PARAM_NAME);
+				assertThat(pair[0]).isEqualTo(SftpTaskLaunchRequestArgumentsMapper.LOCAL_FILE_PATH_PARAM_NAME);
 
 				assertThat(pair[1]).isEqualTo(Paths.get(config.getLocalDir().getPath(),
 					"sftpSource" + i + ".txt").toString());
@@ -136,9 +141,40 @@ public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport
 
 	}
 
+	@TestPropertySource(properties = {
+		"task.launch.request.task-name-expression='task' + payload.name.substring(payload.name.lastIndexOf('.')-1,payload.name.lastIndexOf('.'))"
+	})
+	public static class RefTestsWithTaskNameExpression extends SftpDataflowSourceIntegrationTests {
+
+		@Autowired
+		private ConcurrentMetadataStore metadataStore;
+
+		@Test
+		public void taskLaunchRequestTaskNameExpression() throws Exception {
+			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
+			for (int i = 1; i <= 2; i++) {
+				Message<?> received = messages.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), instanceOf(String.class));
+
+				DataFlowTaskLaunchRequest payload = objectMapper.readValue((String) received.getPayload(),
+						DataFlowTaskLaunchRequest.class);
+
+				String[] pair = payload.getCommandlineArguments().get(0).split("=");
+
+				assertThat(pair[0]).isEqualTo(SftpTaskLaunchRequestArgumentsMapper.LOCAL_FILE_PATH_PARAM_NAME);
+
+				assertThat(pair[1]).isEqualTo(Paths.get(config.getLocalDir().getPath(),
+						"sftpSource" + i + ".txt").toString());
+
+				assertThat(payload.getTaskName()).isEqualTo("task" + i);
+			}
+		}
+	}
+
 	@TestPropertySource(properties = { "sftp.listOnly = true", "sftp.factory.host = 127.0.0.1",
 		"sftp.factory.username = user", "sftp.factory.password = pass", "logging.level.org.springframework"
-		+ ".integration=DEBUG" })
+		+ ".integration=DEBUG", "task.launch.request.task-name=foo"})
 	public static class SftpListOnlyGatewayTests extends SftpDataflowSourceIntegrationTests {
 
 		@Test
@@ -153,7 +189,7 @@ public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport
 					DataFlowTaskLaunchRequest.class);
 
 				assertThat(payload.getCommandlineArguments()).containsExactlyInAnyOrder(
-					String.format("%s=%s", SftpTaskLaunchRequestContextProvider.REMOTE_FILE_PATH_PARAM_NAME,
+					String.format("%s=%s", SftpTaskLaunchRequestArgumentsMapper.REMOTE_FILE_PATH_PARAM_NAME,
 						Paths.get(config.getRemoteDir(), "sftpSource" + i + ".txt").toString()),
 					"sftp_host=127.0.0.1", "sftp_username=user", "sftp_password=pass",
 					String.format("sftp_port=%s", System.getProperty("sftp.factory.port"))
@@ -170,7 +206,8 @@ public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport
 		"sftp.factories.two.port=${sftp.factory.port}", "sftp.factories.two.username = user",
 		"sftp.factories.two.password = pass", "sftp.factories.two.cache-sessions = true",
 		"sftp.factories.two.allowUnknownKeys = true",
-		"sftp.directories=one.sftpSource,two.sftpSecondSource,junk.sftpSource", "sftp.max-fetch=1", "sftp.fair=true" })
+		"sftp.directories=one.sftpSource,two.sftpSecondSource", "sftp.max-fetch=1", "sftp.fair=true",
+	    "task.launch.request.task-name=foo"})
 	public static class MultiSourceRefTests extends SftpDataflowSourceIntegrationTests {
 
 		@Autowired
@@ -202,26 +239,100 @@ public abstract class SftpDataflowSourceIntegrationTests extends SftpTestSupport
 				assertNotNull(received);
 				assertThat(received.getPayload(), instanceOf(String.class));
 				DataFlowTaskLaunchRequest payload = objectMapper.readValue((String) received.getPayload(),
-					DataFlowTaskLaunchRequest.class);
+						DataFlowTaskLaunchRequest.class);
 
-				String[] pair = payload.getCommandlineArguments().get(0).split("=");
 
-				assertThat(pair[0]).isEqualTo(SftpTaskLaunchRequestContextProvider.LOCAL_FILE_PATH_PARAM_NAME);
+				String[] localFilePair = payload.getCommandlineArguments().stream().filter(arg ->
+						arg.startsWith(SftpTaskLaunchRequestArgumentsMapper.LOCAL_FILE_PATH_PARAM_NAME)).findFirst()
+						.get().split("=");
 
-				assertThat(pair[1], (i == 2) ?
-					equalTo(Paths.get(config.getLocalDir().getPath(), "sftpSource3.txt").toString()) :
-					isOneOf(Paths.get(config.getLocalDir().getPath(), "sftpSource1.txt").toString(),
-						Paths.get(config.getLocalDir().getPath(), "sftpSource2.txt").toString()));
+				assertThat(localFilePair[1], (i == 2) ?
+						equalTo(Paths.get(config.getLocalDir().getPath(), "sftpSource3.txt").toString()) :
+						isOneOf(Paths.get(config.getLocalDir().getPath(), "sftpSource1.txt").toString(),
+								Paths.get(config.getLocalDir().getPath(), "sftpSource2.txt").toString()));
 
+
+				String[] selectedServerPair = payload.getCommandlineArguments().stream().filter(arg ->
+						arg.startsWith(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)).findFirst()
+						.get().split("=");
+				assertThat(selectedServerPair[1]).isEqualTo( i==2 ? "two" : "one");
 			}
+
 			assertNull(messages.poll(10, TimeUnit.MICROSECONDS));
 		}
+	}
 
+	@TestPropertySource(properties = {"sftp.factories.one.host=localhost", "sftp.listOnly=true",
+									  "sftp.factories.one.port=${sftp.factory.port}",
+									  "sftp.factories.one.username = user",
+									  "sftp.factories.one.password = pass", "sftp.factories.one.cache-sessions = true",
+									  "sftp.factories.one.allowUnknownKeys = true",
+									  "sftp.directories=one.sftpSource", "sftp.max-fetch=1", "sftp.fair=true",
+									  "task.launch.request.task-name=foo"})
+	public static class MultiSourceListTests extends SftpDataflowSourceIntegrationTests {
+
+		@Test
+		public void sourceFilesAsListContainsSftpCommandArgs() throws Exception {
+			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
+			Message<?> received = messages.poll(10, TimeUnit.SECONDS);
+			assertNotNull(received);
+			DataFlowTaskLaunchRequest payload = objectMapper.readValue((String) received.getPayload(),
+					DataFlowTaskLaunchRequest.class);
+			assertThat(StringUtils.collectionToCommaDelimitedString(payload.getCommandlineArguments())).contains(
+					SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
+					SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY,
+					SftpHeaders.SFTP_PORT_PROPERTY_KEY,
+					SftpHeaders.SFTP_HOST_PROPERTY_KEY,
+					SftpHeaders.SFTP_USERNAME_PROPERTY_KEY
+			);
+		}
+	}
+
+	@TestPropertySource(properties = { "sftp.factories.one.host=localhost",
+									   "sftp.factories.one.port=${sftp.factory.port}",
+									   "sftp.factories.one.username = user",
+									   "sftp.factories.one.password = pass",
+									   "sftp.factories.one.cache-sessions = true",
+									   "sftp.factories.one.allowUnknownKeys = true",
+									   "sftp.factories.two.host=localhost",
+									   "sftp.factories.two.port=${sftp.factory.port}",
+									   "sftp.factories.two.username = user",
+									   "sftp.factories.two.password = pass",
+									   "sftp.factories.two.cache-sessions = true",
+									   "sftp.factories.two.allowUnknownKeys = true",
+									   "sftp.directories=one.sftpSource,two.sftpSecondSource",
+									   "sftp.max-fetch=1",
+									   "sftp.fair=true",
+									   "sftp.multisource.task-names.one=foo1",
+									   "sftp.multisource.task-names.two=foo2"})
+	public static class MultiSourceTaskNameTests extends SftpDataflowSourceIntegrationTests {
+		@BeforeClass
+		public static void setup() throws Exception {
+			File secondFolder = remoteTemporaryFolder.newFolder("sftpSecondSource");
+			File file = new File(secondFolder, "sftpSource3.txt");
+			FileOutputStream fos = new FileOutputStream(file);
+			fos.write("source3".getBytes());
+			fos.close();
+		}
+
+		@Test
+		public void taskNameMappedToSftpSource() throws Exception {
+			BlockingQueue<Message<?>> messages = this.messageCollector.forChannel(this.sftpSource.output());
+
+			for (int i = 1; i <= 3; i++) {
+				Message<?> received = messages.poll(10, TimeUnit.SECONDS);
+				assertNotNull(received);
+				assertThat(received.getPayload(), instanceOf(String.class));
+				DataFlowTaskLaunchRequest payload = objectMapper.readValue((String) received.getPayload(),
+						DataFlowTaskLaunchRequest.class);
+
+				assertThat(payload.getTaskName()).isEqualTo(i == 2 ? "foo2" : "foo1");
+			}
+		}
 	}
 
 	@SpringBootApplication
 	static class SftpDataflowSourceApplication {
 	}
-
 }
 

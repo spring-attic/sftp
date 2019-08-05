@@ -16,23 +16,17 @@
 
 package org.springframework.cloud.stream.app.sftp.common.source;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.integration.aop.AbstractMessageSourceAdvice;
 import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.expression.ExpressionEvalMap;
 import org.springframework.integration.expression.FunctionExpression;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyDirectory;
-import org.springframework.integration.file.remote.session.DelegatingSessionFactory;
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_HOST_PROPERTY_KEY;
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY;
@@ -48,37 +42,25 @@ import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeader
  * @author David Turanski
  * @since 2.0
  */
-public class ListFilesRotator extends AbstractMessageSourceAdvice {
-
-	private static final Log logger = LogFactory.getLog(ListFilesRotator.class);
+public class SftpSourceRotator extends RotatingServerAdvice {
 
 	private final SftpSourceProperties properties;
+	private final StandardRotationPolicy rotationPolicy;
 
-	private final DelegatingSessionFactory<?> sessionFactory;
-
-	private final List<KeyDirectory> keyDirs = new ArrayList<>();
-
-	private final boolean fair;
-
-	private volatile boolean initialized;
-
-	private volatile Iterator<KeyDirectory> iterator;
-
-	private volatile KeyDirectory current;
-
-	public ListFilesRotator(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
+	public SftpSourceRotator(SftpSourceProperties properties, StandardRotationPolicy rotationPolicy) {
+		super(rotationPolicy);
 		this.properties = properties;
-		this.sessionFactory = factory.getFactory();
-		if (properties.isMultiSource()) {
-			this.keyDirs.addAll(SftpSourceProperties.keyDirectories(properties));
-		}
-		this.fair = properties.isFair();
-		this.iterator = this.keyDirs.iterator();
+		this.rotationPolicy = rotationPolicy;
 	}
 
+	/**
+	 * Build a {@code Map<String,Expression>} whose values are obtained by dynamically evaluating the expressions.
+	 * The values are dependent on the selected session factory in the rotation.
+	 * @return the map as {@code Map<String, Object> } to use as an argument for {@code IntegrationFlowBuilder.enrichHeaders()}.
+	 */
 	public Map<String, Object> headers() {
 		Supplier<SftpSourceProperties.Factory> factory = () -> {
-			SftpSourceProperties.Factory selected = this.properties.getFactories().get(this.current.getKey());
+			SftpSourceProperties.Factory selected = this.properties.getFactories().get(this.getCurrentKey());
 			if (selected == null) {
 				// missing key used default factory
 				selected = this.properties.getFactory();
@@ -86,7 +68,7 @@ public class ListFilesRotator extends AbstractMessageSourceAdvice {
 			return selected;
 		};
 		Map<String, Object> map = new HashMap<>();
-		map.put(SFTP_SELECTED_SERVER_PROPERTY_KEY, new FunctionExpression<>(m -> this.current.getKey()));
+		map.put(SFTP_SELECTED_SERVER_PROPERTY_KEY, new FunctionExpression<>(m -> this.getCurrentKey()));
 		map.put(SFTP_HOST_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getHost()));
 		map.put(SFTP_PORT_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getPort()));
 		map.put(SFTP_USERNAME_PROPERTY_KEY, new FunctionExpression<>(m -> factory.get().getUsername()));
@@ -94,47 +76,31 @@ public class ListFilesRotator extends AbstractMessageSourceAdvice {
 		return map;
 	}
 
-	public String getCurrentDirectory() {
-		return current.getDirectory();
+	public String getCurrentKey() {
+		return this.rotationPolicy.getCurrent().getKey().toString();
 	}
 
-	@Override
-	public boolean beforeReceive(MessageSource<?> source) {
-		if (this.fair || !this.initialized) {
-			rotate();
-			this.initialized = true;
-		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("Next poll is for " + this.current);
-		}
-		this.sessionFactory.setThreadKey(this.current.getKey());
-		return true;
+	public String getCurrentDirectory() {
+		return this.rotationPolicy.getCurrent().getDirectory();
 	}
 
 	@Override
 	public Message<?> afterReceive(Message<?> result, MessageSource<?> source) {
-		// We can't reset the key here because the downstream gateway needs it.
-		// The flow must call clearKey after the gateway call.
+		if (result != null) {
+			result = MessageBuilder.fromMessage(result).
+					setHeader(SFTP_SELECTED_SERVER_PROPERTY_KEY, this.getCurrentKey()).build();
+		}
+		this.rotationPolicy.afterReceive(result != null, source);
 		return result;
 	}
 
-	public Message<?> clearKey(Message<List<?>> message) {
-		this.sessionFactory.clearThreadKey();
-		boolean noFilesReceived = message.getPayload().size() == 0;
-		if (logger.isTraceEnabled()) {
-			logger.trace("Poll produced " + (noFilesReceived ? "no" : "") + " files");
-		}
-		if (!this.fair && noFilesReceived) {
-			rotate();
-		}
-		return message;
+	/**
+	 * Evaluate the headers.
+	 * @return a {@code Map<String,Object>}
+	 */
+	public Map<String, Object> evaluateHeaders() {
+		return ExpressionEvalMap.from(headers())
+				.usingSimpleCallback()
+				.build();
 	}
-
-	private void rotate() {
-		if (!this.iterator.hasNext()) {
-			this.iterator = this.keyDirs.iterator();
-		}
-		this.current = this.iterator.next();
-	}
-
 }

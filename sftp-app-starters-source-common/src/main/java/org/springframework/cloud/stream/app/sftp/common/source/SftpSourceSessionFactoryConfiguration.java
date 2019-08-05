@@ -30,12 +30,14 @@ import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.sftp.session.DefaultSftpSessionFactory;
 
 import com.jcraft.jsch.ChannelSftp.LsEntry;
+import org.springframework.lang.Nullable;
 
 /**
  * Session factory configuration.
  *
  * @author Gary Russell
  * @author Artem Bilan
+ * @author David Turanski
  *
  */
 public class SftpSourceSessionFactoryConfiguration {
@@ -55,10 +57,20 @@ public class SftpSourceSessionFactoryConfiguration {
 	}
 
 	@Bean
-	public RotatingServerAdvice rotatingAdvice(SftpSourceProperties properties, DelegatingFactoryWrapper factory) {
+	RotatingServerAdvice.StandardRotationPolicy rotationPolicy(SftpSourceProperties properties,
+															   @Nullable DelegatingFactoryWrapper factory) {
+
 		return properties.isMultiSource()
-				? new RotatingServerAdvice(factory.getFactory(), SftpSourceProperties.keyDirectories(properties),
-						properties.isFair())
+				? new RotatingServerAdvice.StandardRotationPolicy(factory.getFactory(),
+				SftpSourceProperties.keyDirectories(properties), properties.isFair())
+				: null;
+	}
+
+	@Bean
+	public SftpSourceRotator rotatingAdvice(SftpSourceProperties properties,
+											@Nullable RotatingServerAdvice.StandardRotationPolicy rotationPolicy) {
+		return properties.isMultiSource()
+				? new SftpSourceRotator(properties, rotationPolicy)
 				: null;
 	}
 
