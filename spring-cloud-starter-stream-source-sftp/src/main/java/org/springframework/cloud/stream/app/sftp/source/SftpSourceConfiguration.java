@@ -24,7 +24,6 @@ import com.jcraft.jsch.ChannelSftp.LsEntry;
 import org.aopalliance.aop.Advice;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,7 +33,7 @@ import org.springframework.cloud.stream.app.file.FileConsumerProperties;
 import org.springframework.cloud.stream.app.file.FileReadingMode;
 import org.springframework.cloud.stream.app.file.FileUtils;
 import org.springframework.cloud.stream.app.file.remote.RemoteFileDeletingTransactionSynchronizationProcessor;
-import org.springframework.cloud.stream.app.sftp.common.source.ListFilesRotator;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceRotator;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
@@ -54,7 +53,6 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.SourcePollingChannelAdapterSpec;
 import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.file.filters.ChainFileListFilter;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.file.remote.gateway.AbstractRemoteFileOutboundGateway;
 import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
@@ -112,13 +110,11 @@ public class SftpSourceConfiguration {
 	private ConcurrentMetadataStore metadataStore;
 
 	@Autowired(required = false)
-	private ListFilesRotator listFilesRotator;
+	private SftpSourceRotator sftpSourceRotator;
 
 	@Autowired(required = false)
 	private DelegatingFactoryWrapper delegatingSessionFactory;
 
-	@Autowired(required = false)
-	private RotatingServerAdvice fileSourceRotator;
 
 	@Bean
 	public MessageChannel sftpFileListChannel() {
@@ -158,8 +154,8 @@ public class SftpSourceConfiguration {
 			flowBuilder = FileUtils.enhanceStreamFlowForReadingMode(
 					IntegrationFlows.from(messageSourceStreamingSpec,
 							this.properties.isDeleteRemoteFiles()
-								? consumerSpecWithDelete(this.fileSourceRotator)
-								: consumerSpec(this.fileSourceRotator)),
+								? consumerSpecWithDelete(this.sftpSourceRotator)
+								: consumerSpec(this.sftpSourceRotator)),
 					fileConsumerProperties);
 		}
 		else if (properties.isListOnly() || properties.isTaskLauncherOutput()) {
@@ -182,7 +178,7 @@ public class SftpSourceConfiguration {
 				messageSourceBuilder.maxFetchSize(this.properties.getMaxFetch());
 			}
 
-			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.fileSourceRotator));
+			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.sftpSourceRotator));
 
 			if (fileConsumerProperties.getMode() != FileReadingMode.ref) {
 				flowBuilder = FileUtils.enhanceFlowForReadingMode(flowBuilder, fileConsumerProperties);
@@ -204,7 +200,7 @@ public class SftpSourceConfiguration {
 	}
 
 	private IntegrationFlow singleSourceListingFlow(SessionFactory<LsEntry> sftpSessionFactory) {
-		return IntegrationFlows.from(() -> this.properties.getRemoteDir(), consumerSpec(this.listFilesRotator))
+		return IntegrationFlows.from(() -> this.properties.getRemoteDir(), consumerSpec(this.sftpSourceRotator))
 				.handle(Sftp.outboundGateway(sftpSessionFactory,
 						AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
 						.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
@@ -215,15 +211,14 @@ public class SftpSourceConfiguration {
 
 	private IntegrationFlow multiSourceListingFlow() {
 		IntegrationFlowBuilder flow = IntegrationFlows.from(() ->
-					this.listFilesRotator.getCurrentDirectory(), consumerSpec(this.listFilesRotator))
+					this.sftpSourceRotator.getCurrentDirectory(), consumerSpec(this.sftpSourceRotator))
 				.handle(Sftp.outboundGateway(this.delegatingSessionFactory.getFactory(),
 						AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
 						.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()));
 		if (this.properties.isTaskLauncherOutput()) {
-			flow.enrichHeaders(this.listFilesRotator.headers());
+			flow.enrichHeaders(this.sftpSourceRotator.headers());
 		}
 		return flow
-				.handle(this.listFilesRotator, "clearKey")
 				.split()
 				.channel(listOrLaunchChannel())
 				.get();
@@ -285,13 +280,6 @@ public class SftpSourceConfiguration {
 
 		return MessageBuilder.withPayload(outboundPayload).copyHeaders(messageHeaders)
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN).build();
-	}
-
-	@Bean
-	public ListFilesRotator rotator(SftpSourceProperties properties, ObjectProvider<DelegatingFactoryWrapper> factory) {
-		return properties.isMultiSource()
-			? new ListFilesRotator(properties, factory.getIfUnique())
-			: null;
 	}
 
 }

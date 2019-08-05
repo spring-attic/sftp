@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.app.sftp.common.source.ListFilesRotator;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceRotator;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.test.sftp.SftpTestSupport;
@@ -356,7 +356,7 @@ public abstract class SftpSourceIntegrationTests extends SftpTestSupport {
 			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).size())
 				.isEqualTo(1);
 			assertThat(TestUtils.getPropertyValue(this.sourcePollingChannelAdapter, "adviceChain", List.class).get(0))
-				.isInstanceOf(ListFilesRotator.class);
+				.isInstanceOf(SftpSourceRotator.class);
 		}
 
 	}

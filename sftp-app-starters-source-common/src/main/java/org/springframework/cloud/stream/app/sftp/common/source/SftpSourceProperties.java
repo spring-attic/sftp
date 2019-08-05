@@ -25,14 +25,13 @@ import java.util.regex.Pattern;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.Range;
 
+import org.hibernate.validator.constraints.Range;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 import org.springframework.expression.Expression;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice.KeyDirectory;
 
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 
@@ -278,12 +277,12 @@ public class SftpSourceProperties {
 	}
 
 	static List<RotatingServerAdvice.KeyDirectory> keyDirectories(SftpSourceProperties properties) {
-		List<KeyDirectory> keyDirs = new ArrayList<>();
+		List<RotatingServerAdvice.KeyDirectory> keyDirs = new ArrayList<>();
 		Assert.isTrue(properties.getDirectories().length > 0, "At least one key.directory required");
 		for (String keyDir : properties.getDirectories()) {
 			String[] split = keyDir.split("\\.");
 			Assert.isTrue(split.length == 2, () -> "key/directory can only have one '.': " + keyDir);
-			keyDirs.add(new KeyDirectory(split[0], split[1]));
+			keyDirs.add(new RotatingServerAdvice.KeyDirectory(split[0], split[1]));
 		}
 		return keyDirs;
 	}

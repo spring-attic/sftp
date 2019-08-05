@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,27 +20,28 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
-import com.jcraft.jsch.ChannelSftp.LsEntry;
 import org.aopalliance.aop.Advice;
-
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.app.sftp.common.source.ListFilesRotator;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
+import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceRotator;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
 import org.springframework.cloud.stream.app.sftp.dataflow.source.metadata.SftpDataflowSourceIdempotentReceiverConfiguration;
-import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpTaskLaunchRequestContextProvider;
+import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpMultiSourceTaskNameMapper;
+import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpMultiSourceTaskNameProperties;
+import org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpTaskLaunchRequestArgumentsMapper;
 import org.springframework.cloud.stream.app.tasklaunchrequest.DataflowTaskLaunchRequestProperties;
 import org.springframework.cloud.stream.app.tasklaunchrequest.TaskLaunchRequestFunction;
+import org.springframework.cloud.stream.app.tasklaunchrequest.support.CommandLineArgumentsMessageMapper;
 import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.annotation.IdempotentReceiver;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -51,7 +52,6 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.dsl.SourcePollingChannelAdapterSpec;
 import org.springframework.integration.file.FileHeaders;
 import org.springframework.integration.file.filters.ChainFileListFilter;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
 import org.springframework.integration.file.remote.gateway.AbstractRemoteFileOutboundGateway;
 import org.springframework.integration.file.remote.session.SessionFactory;
 import org.springframework.integration.metadata.ConcurrentMetadataStore;
@@ -69,6 +69,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import com.jcraft.jsch.ChannelSftp.LsEntry;
+
 /**
  * @author Gary Russell
  * @author Artem Bilan
@@ -77,8 +79,12 @@ import org.springframework.util.StringUtils;
  * @author David Turanski
  */
 @EnableBinding(Source.class)
-@EnableConfigurationProperties({ SftpSourceProperties.class,
-	TriggerPropertiesMaxMessagesDefaultUnlimited.class })
+@EnableConfigurationProperties({
+	   SftpSourceProperties.class,
+	   TriggerPropertiesMaxMessagesDefaultUnlimited.class,
+	   SftpMultiSourceTaskNameProperties.class
+})
+
 @Import({ TriggerConfiguration.class, SftpSourceSessionFactoryConfiguration.class,
 	SftpDataflowSourceIdempotentReceiverConfiguration.class })
 public class SftpDataflowSourceConfiguration {
@@ -88,25 +94,20 @@ public class SftpDataflowSourceConfiguration {
 	private PollerMetadata defaultPoller;
 
 	@Autowired
-	private SftpRemoteFileTemplate sftpTemplate;
-
-	@Autowired
 	private SftpSourceProperties properties;
 
 	@Autowired
 	private ConcurrentMetadataStore metadataStore;
 
 	@Autowired(required = false)
-	private ListFilesRotator listFilesRotator;
+	private SftpSourceRotator sftpSourceRotator;
 
 	@Autowired(required = false)
 	private DelegatingFactoryWrapper delegatingSessionFactory;
 
-	@Autowired(required = false)
-	private RotatingServerAdvice fileSourceRotator;
 
 	@Autowired
-	SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider;
+	CommandLineArgumentsMessageMapper taskLaunchRequestContextProvider;
 
 	@Autowired
 	TaskLaunchRequestFunction taskLaunchRequest;
@@ -125,9 +126,15 @@ public class SftpDataflowSourceConfiguration {
 	}
 
 	@Bean
-	public SftpTaskLaunchRequestContextProvider taskLaunchRequestContextProvider(
+	public CommandLineArgumentsMessageMapper taskLaunchRequestContextProvider(
 		SftpSourceProperties sourceProperties) {
-		return new SftpTaskLaunchRequestContextProvider(sourceProperties, listFilesRotator);
+		return new SftpTaskLaunchRequestArgumentsMapper(sourceProperties, sftpSourceRotator);
+	}
+
+	@Bean
+	@Conditional(SftpMultiSourceTaskNameProperties.MultiSourceTaskNamesCondition.class)
+	public SftpMultiSourceTaskNameMapper sftpMultiSourceTaskNameMapper(SftpMultiSourceTaskNameProperties taskNameProperties) {
+		return new SftpMultiSourceTaskNameMapper(taskNameProperties);
 	}
 
 	@Bean
@@ -163,7 +170,7 @@ public class SftpDataflowSourceConfiguration {
 				messageSourceBuilder.maxFetchSize(this.properties.getMaxFetch());
 			}
 
-			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.fileSourceRotator));
+			flowBuilder = IntegrationFlows.from(messageSourceBuilder, consumerSpec(this.sftpSourceRotator));
 
 		}
 
@@ -181,7 +188,7 @@ public class SftpDataflowSourceConfiguration {
 
 	private IntegrationFlowBuilder singleSourceListingFlowBuilder(SessionFactory<LsEntry> sftpSessionFactory) {
 		return IntegrationFlows.from(() -> this.properties.getRemoteDir(), consumerSpec(this
-			.listFilesRotator))
+			.sftpSourceRotator))
 			.handle(Sftp.outboundGateway(sftpSessionFactory, AbstractRemoteFileOutboundGateway.Command.LS.getCommand(),
 				"payload").options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()))
 			.split()
@@ -190,13 +197,13 @@ public class SftpDataflowSourceConfiguration {
 	}
 
 	private IntegrationFlowBuilder multiSourceListingFlowBuilder() {
-		IntegrationFlowBuilder flow = IntegrationFlows.from(() -> this.listFilesRotator.getCurrentDirectory(),
-			consumerSpec(this.listFilesRotator))
+		IntegrationFlowBuilder flow = IntegrationFlows.from(() -> this.sftpSourceRotator.getCurrentDirectory(),
+			consumerSpec(this.sftpSourceRotator))
 			.handle(Sftp.outboundGateway(this.delegatingSessionFactory.getFactory(),
 				AbstractRemoteFileOutboundGateway.Command.LS.getCommand(), "payload")
 				.options(AbstractRemoteFileOutboundGateway.Option.NAME_ONLY.getOption()));
 
-		return flow.handle(this.listFilesRotator, "clearKey")
+		return flow
 			.split()
 			.channel(sftpListInputChannel());
 	}
@@ -236,13 +243,6 @@ public class SftpDataflowSourceConfiguration {
 
 	@ServiceActivator(inputChannel = "taskLaunchRequestChannel", outputChannel = Source.OUTPUT)
 	public Message<?> transformToTaskLaunchRequestIfNecessary(Message<?> message) {
-		return taskLaunchRequest.apply(taskLaunchRequestContextProvider.processMessage(message));
+		return taskLaunchRequest.apply(message);
 	}
-
-	@Bean
-	public ListFilesRotator rotator(SftpSourceProperties properties,
-		ObjectProvider<DelegatingFactoryWrapper> factory) {
-		return properties.isMultiSource() ? new ListFilesRotator(properties, factory.getIfUnique()) : null;
-	}
-
 }

@@ -39,6 +39,16 @@ sftp.max-fetch=1,
 sftp.fair=true
 ```
 
+==== Multi-source task names
+
+Just as for a single soure, the task name may be configured statically to launch the same task to process files from any server, by setting either `task.launch.request.task-name` or `task.launch.request.task-name-expression`.
+To launch a different task for each remote source, set the corresponding `sftp.multisource.task-names` properties. For example,
+
+```
+sftp.multisource.task-names.one=task1,
+sftp.multisource.task-names.two=task2
+```
+
 == Input
 
 N/A (Fetches files from an SFTP server).
@@ -61,7 +71,7 @@ if `list-only=true`,
 
 *  Any provided `task.launch.request.args`
 
-* `task.launch.request.task-name` is required (the Data Flow task name).
+* The task name must be the same as a Data Flow task definition given by one of the available options listed below.
 
 == Options
 
@@ -86,6 +96,7 @@ $$sftp.filename-regex$$:: $$A filter regex pattern to match the names of files t
 $$sftp.list-only$$:: $$Set to true to return file metadata without the entire payload.$$ *($$Boolean$$, default: `$$false$$`)*
 $$sftp.local-dir$$:: $$The local directory to use for file transfers.$$ *($$File$$, default: `$$<none>$$`)*
 $$sftp.max-fetch$$:: $$The maximum number of remote files to fetch per poll; default unlimited. Does not apply when listing files or building task launch requests.$$ *($$Integer$$, default: `$$<none>$$`)*
+$$sftp.multisource.task-names$$:: $$Map of task names to multi-source server keys.$$ *($$Map<String, String>$$, default: `$$<none>$$`)*
 $$sftp.preserve-timestamp$$:: $$Set to true to preserve the original timestamp.$$ *($$Boolean$$, default: `$$true$$`)*
 $$sftp.remote-dir$$:: $$The remote FTP directory.$$ *($$String$$, default: `$$/$$`)*
 $$sftp.remote-file-separator$$:: $$The remote file separator.$$ *($$String$$, default: `$$/$$`)*
@@ -93,6 +104,7 @@ $$task.launch.request.arg-expressions$$:: $$Comma separated list of option args 
 $$task.launch.request.args$$:: $$Comma separated list of optional args in key=value format.$$ *($$List<String>$$, default: `$$<none>$$`)*
 $$task.launch.request.deployment-properties$$:: $$Comma delimited list of deployment properties to be applied to the TaskLaunchRequest.$$ *($$String$$, default: `$$<empty string>$$`)*
 $$task.launch.request.task-name$$:: $$The Data Flow task name.$$ *($$String$$, default: `$$<none>$$`)*
+$$task.launch.request.task-name-expression$$:: $$A SpEL expression to extract the task name from each Message, using the Message as the evaluation context.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.cron$$:: $$Cron expression value for the Cron Trigger.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.date-format$$:: $$Format for the date value.$$ *($$String$$, default: `$$<none>$$`)*
 $$trigger.fixed-delay$$:: $$Fixed delay for periodic triggers.$$ *($$Integer$$, default: `$$1$$`)*
@@ -117,6 +129,14 @@ $ ./mvnw clean package
 
 ```
 java -jar sftp_dataflow_source.jar --task.launch.request.task-name=myTask --sftp.remote-dir=foo --trigger
+.fixed-delay=60 \
+         --sftp.factory.host=sftpserver --sftp.factory.username=user --sftp.factory.password=pw --sftp.local-dir=/foo
+```
+
+If the original payload is a File object, you may be able to leverage file name conventions to assign a different task name based on the file name:
+
+```
+java -jar sftp_dataflow_source.jar --task.launch.request.task-name-expression='task-'+payload.name.substring(0,5) --sftp.remote-dir=foo --trigger
 .fixed-delay=60 \
          --sftp.factory.host=sftpserver --sftp.factory.username=user --sftp.factory.password=pw --sftp.local-dir=/foo
 ```
