@@ -17,14 +17,8 @@
 package org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.context.annotation.Condition;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
  *  Configures a task name map for Multi-source SFTP.
@@ -48,29 +42,4 @@ public class SftpMultiSourceTaskNameProperties {
         this.taskNames = taskNames;
     }
 
-    /**
-     * Condition required to configure the SftpMultiSourceTaskNameMapper.
-     */
-    public static class MultiSourceTaskNamesCondition implements Condition {
-
-        @Override
-        public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-
-            ConfigurableEnvironment environment = (ConfigurableEnvironment) conditionContext.getEnvironment();
-
-            //The SftpSourceProperties bean does not exist at this point.
-            //Check if multiple directories have been configured.
-            if (!environment.containsProperty("sftp.directories")) {
-                return false;
-            }
-
-            AtomicBoolean match = new AtomicBoolean();
-
-            Binder.get(environment).bind(PREFIX,
-                    Bindable.of(SftpMultiSourceTaskNameProperties.class)).ifBound(properties ->
-                    match.set(!properties.getTaskNames().isEmpty()));
-
-            return match.get();
-        }
-    }
 }

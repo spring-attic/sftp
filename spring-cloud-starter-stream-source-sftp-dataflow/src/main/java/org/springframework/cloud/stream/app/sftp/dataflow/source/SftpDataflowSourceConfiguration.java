@@ -25,6 +25,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceRotator;
@@ -41,8 +43,12 @@ import org.springframework.cloud.stream.app.trigger.TriggerConfiguration;
 import org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.integration.annotation.IdempotentReceiver;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
@@ -132,7 +138,7 @@ public class SftpDataflowSourceConfiguration {
 	}
 
 	@Bean
-	@Conditional(SftpMultiSourceTaskNameProperties.MultiSourceTaskNamesCondition.class)
+	@Conditional(MultiSourceTaskNamesCondition.class)
 	public SftpMultiSourceTaskNameMapper sftpMultiSourceTaskNameMapper(SftpMultiSourceTaskNameProperties taskNameProperties) {
 		return new SftpMultiSourceTaskNameMapper(taskNameProperties);
 	}
@@ -244,5 +250,28 @@ public class SftpDataflowSourceConfiguration {
 	@ServiceActivator(inputChannel = "taskLaunchRequestChannel", outputChannel = Source.OUTPUT)
 	public Message<?> transformToTaskLaunchRequestIfNecessary(Message<?> message) {
 		return taskLaunchRequest.apply(message);
+	}
+
+	/**
+	 * Condition required to configure the SftpMultiSourceTaskNameMapper.
+	 */
+	public static class MultiSourceTaskNamesCondition implements Condition {
+
+		@Override
+		public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
+
+			ConfigurableEnvironment environment = (ConfigurableEnvironment) conditionContext.getEnvironment();
+
+			//The SftpSourceProperties bean does not exist at this point.
+			//Check if multiple directories have been configured.
+			if (!environment.containsProperty("sftp.directories")) {
+				return false;
+			}
+
+			return Binder.get(environment).bind(SftpMultiSourceTaskNameProperties.PREFIX,
+					Bindable.of(SftpMultiSourceTaskNameProperties.class))
+						.map(properties -> !properties.getTaskNames().isEmpty())
+						.orElse(false);
+		}
 	}
 }
