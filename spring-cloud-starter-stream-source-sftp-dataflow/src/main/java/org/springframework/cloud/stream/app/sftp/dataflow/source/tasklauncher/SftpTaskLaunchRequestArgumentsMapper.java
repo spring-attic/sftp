@@ -51,15 +51,15 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 
 	private final SftpSourceProperties sourceProperties;
 
-	private final SftpSourceRotator listFilesRotator;
+	private final SftpSourceRotator sftpSourceRotator;
 
 	public SftpTaskLaunchRequestArgumentsMapper(
 			SftpSourceProperties sourceProperties,
-			SftpSourceRotator listFilesRotator) {
+			SftpSourceRotator sftpSourceRotator) {
 		Assert.notNull(sourceProperties, "'sourceProperties' is required");
 
 		this.sourceProperties = sourceProperties;
-		this.listFilesRotator = listFilesRotator;
+		this.sftpSourceRotator = sftpSourceRotator;
 	}
 
 	@Override
@@ -107,7 +107,7 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 			commandLineArgs.add(REMOTE_FILE_PATH_PARAM_NAME + "=" + remoteFilePath);
 		}
 		if (this.sourceProperties.isMultiSource()) {
-			Map<String, Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
+			Map<String, Object> headers = convertMultiSourceHeaders(sftpSourceRotator.headers());
 			commandLineArgs.add(
 					String.format("%s=%s", SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
 							headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
@@ -126,7 +126,7 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 				String.valueOf(sourceProperties.getFactory().getPort())));
 		}
 		else {
-			Map<String, Object> headers = convertMultiSourceHeaders(listFilesRotator.headers());
+			Map<String, Object> headers = convertMultiSourceHeaders(sftpSourceRotator.headers());
 			commandLineArgs.add(
 					String.format("%s=%s", SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
 							headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
@@ -151,6 +151,5 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 		Map<String, Object> result = new HashMap<>();
 		headers.forEach((k, v) -> result.put(k, ((FunctionExpression) v).getValue()));
 		return result;
-
 	}
 }
