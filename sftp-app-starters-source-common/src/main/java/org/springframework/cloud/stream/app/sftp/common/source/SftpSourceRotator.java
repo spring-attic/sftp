@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.springframework.expression.Expression;
 import org.springframework.integration.aop.AbstractMessageSourceAdvice;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.expression.FunctionExpression;
@@ -52,6 +53,11 @@ public class SftpSourceRotator extends RotatingServerAdvice {
 		this.rotationPolicy = rotationPolicy;
 	}
 
+	/**
+	 * Build a {@code Map<String,Expression>} whose values are obtained by dynamically evaluating the expressions.
+	 * The values are dependent on the selected session factory in the rotation.
+	 * @return the map as {@code Map<String, Object> } to use as an argument for {@code IntegrationFlowBuilder.enrichHeaders()}.
+	 */
 	public Map<String, Object> headers() {
 		Supplier<SftpSourceProperties.Factory> factory = () -> {
 			SftpSourceProperties.Factory selected = this.properties.getFactories().get(this.getCurrentKey());
@@ -86,6 +92,15 @@ public class SftpSourceRotator extends RotatingServerAdvice {
 		}
 		this.rotationPolicy.afterReceive(result != null, source);
 		return result;
+	}
 
+	/**
+	 * Evaluate the headers.
+	 * @return a {@code Map<String,Object>}
+	 */
+	public Map<String, Object> evaluateHeaders() {
+		Map<String, Object> result = new HashMap<>();
+		this.headers().forEach((k, v) -> result.put(k, ((Expression) v).getValue()));
+		return result;
 	}
 }

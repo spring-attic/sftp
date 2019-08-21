@@ -19,7 +19,6 @@ package org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -29,7 +28,6 @@ import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceRotator
 import org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders;
 import org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties;
 import org.springframework.cloud.stream.app.tasklaunchrequest.support.CommandLineArgumentsMessageMapper;
-import org.springframework.integration.expression.FunctionExpression;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -107,7 +105,7 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 			commandLineArgs.add(REMOTE_FILE_PATH_PARAM_NAME + "=" + remoteFilePath);
 		}
 		if (this.sourceProperties.isMultiSource()) {
-			Map<String, Object> headers = convertMultiSourceHeaders(sftpSourceRotator.headers());
+			Map<String, Object> headers = sftpSourceRotator.evaluateHeaders();
 			commandLineArgs.add(
 					String.format("%s=%s", SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
 							headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
@@ -126,7 +124,7 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 				String.valueOf(sourceProperties.getFactory().getPort())));
 		}
 		else {
-			Map<String, Object> headers = convertMultiSourceHeaders(sftpSourceRotator.headers());
+			Map<String, Object> headers = sftpSourceRotator.evaluateHeaders();
 			commandLineArgs.add(
 					String.format("%s=%s", SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY,
 							headers.get(SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY)));
@@ -147,9 +145,5 @@ public class SftpTaskLaunchRequestArgumentsMapper implements CommandLineArgument
 		}
 	}
 
-	private Map<String, Object> convertMultiSourceHeaders(Map<String, Object> headers) {
-		Map<String, Object> result = new HashMap<>();
-		headers.forEach((k, v) -> result.put(k, ((FunctionExpression) v).getValue()));
-		return result;
-	}
+
 }
