@@ -16,16 +16,6 @@
 
 package org.springframework.cloud.stream.app.sftp.dataflow.source;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.Matchers.isOneOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -64,6 +54,17 @@ import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.Matchers.isOneOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.springframework.cloud.stream.app.sftp.common.source.SftpSourceSessionFactoryConfiguration.DelegatingFactoryWrapper;
+
+
 /**
  * @author David Turanski
  * @author Marius Bogoevici
@@ -73,7 +74,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = { "sftp.remoteDir = sftpSource",
-	"sftp.factory.username = foo", "sftp.factory.password = foo", "sftp.factory.allowUnknownKeys = true",
+	"sftp.factory.username = foo", "sftp.factory.pa" +
+																							"ssword = foo", "sftp.factory.allowUnknownKeys = true",
 	"sftp.filenameRegex = .*", "logging.level.com.jcraft.jsch=WARN",
 	"logging.level.org.springframework.cloud.stream.app.sftp.source=DEBUG" })
 @DirtiesContext

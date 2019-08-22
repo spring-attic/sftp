@@ -16,23 +16,23 @@
 
 package org.springframework.cloud.stream.app.sftp.common.source;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import org.springframework.integration.aop.AbstractMessageSourceAdvice;
+import org.springframework.integration.core.MessageSource;
+import org.springframework.integration.expression.ExpressionEvalMap;
+import org.springframework.integration.expression.FunctionExpression;
+import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_HOST_PROPERTY_KEY;
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PASSWORD_PROPERTY_KEY;
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_PORT_PROPERTY_KEY;
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_SELECTED_SERVER_PROPERTY_KEY;
 import static org.springframework.cloud.stream.app.sftp.common.source.SftpHeaders.SFTP_USERNAME_PROPERTY_KEY;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
-
-import org.springframework.expression.Expression;
-import org.springframework.integration.aop.AbstractMessageSourceAdvice;
-import org.springframework.integration.core.MessageSource;
-import org.springframework.integration.expression.FunctionExpression;
-import org.springframework.integration.file.remote.aop.RotatingServerAdvice;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * An {@link AbstractMessageSourceAdvice} for listing files on multiple
@@ -99,8 +99,8 @@ public class SftpSourceRotator extends RotatingServerAdvice {
 	 * @return a {@code Map<String,Object>}
 	 */
 	public Map<String, Object> evaluateHeaders() {
-		Map<String, Object> result = new HashMap<>();
-		this.headers().forEach((k, v) -> result.put(k, ((Expression) v).getValue()));
-		return result;
+		return ExpressionEvalMap.from(headers())
+				.usingSimpleCallback()
+				.build();
 	}
 }
