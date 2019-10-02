@@ -52,21 +52,17 @@
 				<artifactId>sftp-app-starters-test-support</artifactId>
 				<version>2.1.2.BUILD-SNAPSHOT</version>
 			</dependency>
-			<!--TODO - Remove temporary override SI transitive dependencies -->
 			<dependency>
 				<groupId>org.springframework.integration</groupId>
 				<artifactId>spring-integration-file</artifactId>
-				<version>5.1.8.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.integration</groupId>
 				<artifactId>spring-integration-sftp</artifactId>
-				<version>5.1.8.BUILD-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.integration</groupId>
 				<artifactId>spring-integration-core</artifactId>
-				<version>5.1.8.BUILD-SNAPSHOT</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
