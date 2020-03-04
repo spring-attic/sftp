@@ -77,36 +77,6 @@
 						<sftp-dataflow-source/>
 					</generatedApps>
 					<enableContainerImageMetadata>true</enableContainerImageMetadata>
-					<metadataSourceTypeFilters>
-						<filter>org.springframework.cloud.stream.app.tasklaunchrequest.DataflowTaskLaunchRequestProperties</filter>
-						<filter>org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited</filter>
-						<filter>org.springframework.cloud.stream.app.sftp.dataflow.source.tasklauncher.SftpMultiSourceTaskNameProperties</filter>
-					</metadataSourceTypeFilters>
-					<metadataNameFilters>
-						<filter>sftp.auto-create-local-dir</filter>
-						<filter>sftp.delete-remote-files</filter>
-						<filter>sftp.directories</filter>
-						<filter>sftp.factories</filter>
-						<filter>sftp.factory.allow-unknown-keys</filter>
-						<filter>sftp.factory.cache-sessions</filter>
-						<filter>sftp.factory.host</filter>
-						<filter>sftp.factory.known-hosts-expression</filter>
-						<filter>sftp.factory.pass-phrase</filter>
-						<filter>sftp.factory.password</filter>
-						<filter>sftp.factory.port</filter>
-						<filter>sftp.factory.private-key</filter>
-						<filter>sftp.factory.username</filter>
-						<filter>sftp.fair</filter>
-						<filter>sftp.filename-pattern</filter>
-						<filter>sftp.filename-regex</filter>
-						<filter>sftp.list-only</filter>
-						<filter>sftp.local-dir</filter>
-						<filter>sftp.max-fetch</filter>
-						<filter>sftp.preserve-timestamp</filter>
-						<filter>sftp.remote-dir</filter>
-						<filter>sftp.remote-file-separator</filter>
-						<filter>sftp.multisource.task-names</filter>
-					</metadataNameFilters>
 				</configuration>
 			</plugin>
 			<plugin>

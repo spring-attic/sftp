@@ -51,10 +51,6 @@
 						<sftp-sink/>
 					</generatedApps>
 					<enableContainerImageMetadata>true</enableContainerImageMetadata>
-					<metadataSourceTypeFilters>
-						<filter>org.springframework.cloud.stream.app.sftp.sink.SftpSinkProperties</filter>
-						<filter>org.springframework.cloud.stream.app.sftp.sink.SftpSinkProperties$Factory</filter>
-					</metadataSourceTypeFilters>
 				</configuration>
 			</plugin>
 		</plugins>

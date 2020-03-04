@@ -77,13 +77,6 @@
 						<sftp-source/>
 					</generatedApps>
 					<enableContainerImageMetadata>true</enableContainerImageMetadata>
-					<metadataSourceTypeFilters>
-						<filter>org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties</filter>
-						<filter>org.springframework.cloud.stream.app.sftp.source.task.SftpSourceTaskProperties</filter>
-						<filter>org.springframework.cloud.stream.app.sftp.common.source.SftpSourceProperties$Factory</filter>
-						<filter>org.springframework.cloud.stream.app.file.FileConsumerProperties</filter>
-						<filter>org.springframework.cloud.stream.app.trigger.TriggerPropertiesMaxMessagesDefaultUnlimited</filter>
-					</metadataSourceTypeFilters>
 				</configuration>
 			</plugin>
 			<plugin>
