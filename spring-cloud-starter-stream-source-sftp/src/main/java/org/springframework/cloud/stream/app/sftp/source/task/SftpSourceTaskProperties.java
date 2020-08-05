@@ -50,7 +50,7 @@ public class SftpSourceTaskProperties {
 	private String dataSourceUrl = "jdbc:h2:tcp://localhost:19092/mem:dataflow";
 
 	/**
-	 * The datasource user name to be applied to the TaskLaunchRequest. Defaults to "sa"
+	 * The datasource user name to be applied to the TaskLaunchRequest. Defaults to `sa`
 	 */
 	private String dataSourceUserName = "sa";
 
