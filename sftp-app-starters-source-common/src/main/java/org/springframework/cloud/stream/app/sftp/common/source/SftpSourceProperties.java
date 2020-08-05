@@ -122,7 +122,7 @@ public class SftpSourceProperties {
 	private Map<String, Factory> factories;
 
 	/**
-	 * A list of factory "name.directory" pairs.
+	 * A list of factory 'name.directory' pairs.
 	 */
 	private String[] directories;
 
